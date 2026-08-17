@@ -39,7 +39,7 @@ export interface Attendance {
   date: string;
   checkIn: string;
   status: "present" | "closed";
-  closedAt?: string;
+  closedAt?: string | undefined;
 }
 
 export interface LineItem {
@@ -78,14 +78,14 @@ export interface Sale {
   received: number;
   status: PayStatus;
   mode: PayMode;
-  denominations?: Record<string, number>;
+  denominations?: Record<string, number> | undefined;
 }
 
 export interface ReturnRec {
   id: string;
   date: string;
   salesmanId: string;
-  customerId?: string;
+  customerId?: string | undefined;
   productId: string;
   qty: number;
   reason: string;
@@ -102,6 +102,6 @@ export interface AppState {
   returns: ReturnRec[];
   /** date -> productId -> qty (main godown opening stock) */
   openingStock: Record<string, Record<string, number>>;
-  session: { role: Role; salesmanId?: string } | null;
+  session: { role: Role; salesmanId?: string | undefined } | null;
   today: string;
 }
