@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Package, Undo2, FileBarChart, PackagePlus, Split, CalendarCheck, RotateCcw, LogOut } from "lucide-react";
+import { Package, Undo2, FileBarChart, PackagePlus, Split, CalendarCheck, RotateCcw, LogOut, Route as RouteIcon } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Card, SectionTitle, useConfirm } from "@/components/kit";
 
@@ -8,6 +8,7 @@ export const Route = createFileRoute("/admin/more")({ component: AdminMore });
 const links = [
   { to: "/admin/purchase", label: "Purchase Entry", icon: <PackagePlus className="size-5" /> },
   { to: "/admin/allocate", label: "Allocate Stock", icon: <Split className="size-5" /> },
+  { to: "/admin/routes", label: "Route Setup", icon: <RouteIcon className="size-5" /> },
   { to: "/admin/products", label: "Products", icon: <Package className="size-5" /> },
   { to: "/admin/returns", label: "Returns", icon: <Undo2 className="size-5" /> },
   { to: "/admin/closing", label: "Day Closing", icon: <CalendarCheck className="size-5" /> },
