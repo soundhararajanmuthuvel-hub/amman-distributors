@@ -40,7 +40,7 @@ function FieldHome() {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <Link to="/field/sales"><Btn className="w-full">New sale</Btn></Link>
+        <Link to="/field/sales" search={{ customerId: undefined }}><Btn className="w-full">New sale</Btn></Link>
         <Link to="/field/route"><Btn variant="soft" className="w-full">My route</Btn></Link>
         <Link to="/field/stock"><Btn variant="soft" className="w-full">My stock</Btn></Link>
         <Link to="/field/more"><Btn variant="soft" className="w-full"><Undo2 className="size-4" /> Return</Btn></Link>
