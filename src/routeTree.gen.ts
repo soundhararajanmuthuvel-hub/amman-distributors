@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as FieldRouteRouteImport } from './routes/field.route'
 import { Route as FieldRouteImport } from './routes/field'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAllocateRouteImport } from './routes/admin.allocate'
@@ -28,6 +27,7 @@ import { Route as FieldIndexRouteImport } from './routes/field.index'
 import { Route as FieldMoreRouteImport } from './routes/field.more'
 import { Route as FieldSalesRouteImport } from './routes/field.sales'
 import { Route as FieldStockRouteImport } from './routes/field.stock'
+import { Route as FieldVisitsRouteImport } from './routes/field.visits'
 import { Route as AdminCustomerIdRouteImport } from './routes/admin.customer.$id'
 import { Route as AdminSalesmanIdRouteImport } from './routes/admin.salesman.$id'
 
@@ -39,11 +39,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FieldRouteRoute = FieldRouteRouteImport.update({
-  id: '/field',
-  path: '/field',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FieldRoute = FieldRouteImport.update({
@@ -126,6 +121,11 @@ const FieldStockRoute = FieldStockRouteImport.update({
   path: '/stock',
   getParentRoute: () => FieldRoute,
 } as any)
+const FieldVisitsRoute = FieldVisitsRouteImport.update({
+  id: '/visits',
+  path: '/visits',
+  getParentRoute: () => FieldRoute,
+} as any)
 const AdminCustomerIdRoute = AdminCustomerIdRouteImport.update({
   id: '/customer/$id',
   path: '/customer/$id',
@@ -139,8 +139,8 @@ const AdminSalesmanIdRoute = AdminSalesmanIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/field': typeof FieldRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/field': typeof FieldRouteWithChildren
   '/admin/allocate': typeof AdminAllocateRoute
   '/admin/closing': typeof AdminClosingRoute
   '/admin/customers': typeof AdminCustomersRoute
@@ -154,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/field/more': typeof FieldMoreRoute
   '/field/sales': typeof FieldSalesRoute
   '/field/stock': typeof FieldStockRoute
+  '/field/visits': typeof FieldVisitsRoute
   '/admin/': typeof AdminIndexRoute
   '/field/': typeof FieldIndexRoute
   '/admin/customer/$id': typeof AdminCustomerIdRoute
@@ -161,7 +162,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/field': typeof FieldIndexRoute
   '/admin/allocate': typeof AdminAllocateRoute
   '/admin/closing': typeof AdminClosingRoute
   '/admin/customers': typeof AdminCustomersRoute
@@ -175,15 +175,17 @@ export interface FileRoutesByTo {
   '/field/more': typeof FieldMoreRoute
   '/field/sales': typeof FieldSalesRoute
   '/field/stock': typeof FieldStockRoute
+  '/field/visits': typeof FieldVisitsRoute
   '/admin': typeof AdminIndexRoute
+  '/field': typeof FieldIndexRoute
   '/admin/customer/$id': typeof AdminCustomerIdRoute
   '/admin/salesman/$id': typeof AdminSalesmanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/field': typeof FieldRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/field': typeof FieldRouteWithChildren
   '/admin/allocate': typeof AdminAllocateRoute
   '/admin/closing': typeof AdminClosingRoute
   '/admin/customers': typeof AdminCustomersRoute
@@ -197,6 +199,7 @@ export interface FileRoutesById {
   '/field/more': typeof FieldMoreRoute
   '/field/sales': typeof FieldSalesRoute
   '/field/stock': typeof FieldStockRoute
+  '/field/visits': typeof FieldVisitsRoute
   '/admin/': typeof AdminIndexRoute
   '/field/': typeof FieldIndexRoute
   '/admin/customer/$id': typeof AdminCustomerIdRoute
@@ -206,8 +209,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/field'
     | '/admin'
+    | '/field'
     | '/admin/allocate'
     | '/admin/closing'
     | '/admin/customers'
@@ -221,6 +224,7 @@ export interface FileRouteTypes {
     | '/field/more'
     | '/field/sales'
     | '/field/stock'
+    | '/field/visits'
     | '/admin/'
     | '/field/'
     | '/admin/customer/$id'
@@ -228,7 +232,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/field'
     | '/admin/allocate'
     | '/admin/closing'
     | '/admin/customers'
@@ -242,14 +245,16 @@ export interface FileRouteTypes {
     | '/field/more'
     | '/field/sales'
     | '/field/stock'
+    | '/field/visits'
     | '/admin'
+    | '/field'
     | '/admin/customer/$id'
     | '/admin/salesman/$id'
   id:
     | '__root__'
     | '/'
-    | '/field'
     | '/admin'
+    | '/field'
     | '/admin/allocate'
     | '/admin/closing'
     | '/admin/customers'
@@ -263,6 +268,7 @@ export interface FileRouteTypes {
     | '/field/more'
     | '/field/sales'
     | '/field/stock'
+    | '/field/visits'
     | '/admin/'
     | '/field/'
     | '/admin/customer/$id'
@@ -271,7 +277,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  FieldRouteRoute: typeof FieldRouteRoute
   AdminRoute: typeof AdminRouteWithChildren
   FieldRoute: typeof FieldRouteWithChildren
 }
@@ -290,13 +295,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/field': {
-      id: '/field'
-      path: '/field'
-      fullPath: '/field'
-      preLoaderRoute: typeof FieldRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/field': {
@@ -411,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FieldStockRouteImport
       parentRoute: typeof FieldRoute
     }
+    '/field/visits': {
+      id: '/field/visits'
+      path: '/visits'
+      fullPath: '/field/visits'
+      preLoaderRoute: typeof FieldVisitsRouteImport
+      parentRoute: typeof FieldRoute
+    }
     '/admin/customer/$id': {
       id: '/admin/customer/$id'
       path: '/customer/$id'
@@ -466,6 +471,7 @@ interface FieldRouteChildren {
   FieldMoreRoute: typeof FieldMoreRoute
   FieldSalesRoute: typeof FieldSalesRoute
   FieldStockRoute: typeof FieldStockRoute
+  FieldVisitsRoute: typeof FieldVisitsRoute
   FieldIndexRoute: typeof FieldIndexRoute
 }
 
@@ -473,6 +479,7 @@ const FieldRouteChildren: FieldRouteChildren = {
   FieldMoreRoute: FieldMoreRoute,
   FieldSalesRoute: FieldSalesRoute,
   FieldStockRoute: FieldStockRoute,
+  FieldVisitsRoute: FieldVisitsRoute,
   FieldIndexRoute: FieldIndexRoute,
 }
 
@@ -480,7 +487,6 @@ const FieldRouteWithChildren = FieldRoute._addFileChildren(FieldRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  FieldRouteRoute: FieldRouteRoute,
   AdminRoute: AdminRouteWithChildren,
   FieldRoute: FieldRouteWithChildren,
 }

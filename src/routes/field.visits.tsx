@@ -3,7 +3,7 @@ import { MapPin, Phone, Check } from "lucide-react";
 import { useStore, customerOutstanding, money } from "@/lib/store";
 import { Card, Btn, Empty, Pill, SectionTitle } from "@/components/kit";
 
-export const Route = createFileRoute("/field")({ component: MyRoute });
+export const Route = createFileRoute("/field/visits")({ component: MyRoute });
 
 function MyRoute() {
   const { state } = useStore();
