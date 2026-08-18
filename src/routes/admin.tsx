@@ -21,6 +21,7 @@ const titles: Record<string, { t: string; s: string }> = {
   "/admin/reports": { t: "Reports", s: "Sales, stock, payments, salesmen" },
   "/admin/returns": { t: "Returns", s: "Route returns" },
   "/admin/closing": { t: "Day Closing", s: "Closing stock & carry forward" },
+  "/admin/routes": { t: "Route Setup", s: "Assign routes & shops to salesmen" },
 };
 
 function AdminLayout() {

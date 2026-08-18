@@ -20,6 +20,7 @@ import type {
   ReturnRec,
   Role,
   Sale,
+  Salesman,
 } from "./types";
 
 const KEY = "dairy-dms-v1";
@@ -55,6 +56,7 @@ interface Ctx {
   addPayment: (saleId: string, amount: number, mode: PayMode) => void;
   upsertProduct: (p: Product) => void;
   upsertCustomer: (c: Customer) => void;
+  upsertSalesman: (sm: Salesman) => void;
 }
 
 const StoreContext = createContext<Ctx | null>(null);
@@ -152,6 +154,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           customers: s.customers.some((x) => x.id === c.id)
             ? s.customers.map((x) => (x.id === c.id ? c : x))
             : [...s.customers, c],
+        })),
+      upsertSalesman: (sm) =>
+        set((s) => ({
+          ...s,
+          salesmen: s.salesmen.some((x) => x.id === sm.id)
+            ? s.salesmen.map((x) => (x.id === sm.id ? sm : x))
+            : [...s.salesmen, sm],
         })),
     };
   }, [state, set]);
