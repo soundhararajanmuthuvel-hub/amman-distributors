@@ -29,7 +29,7 @@ export const adminNav: NavItem[] = [
 
 export const fieldNav: NavItem[] = [
   { to: "/field", label: "Home", icon: <Home className="size-5" /> },
-  { to: "/field/route", label: "Route", icon: <RouteIcon className="size-5" /> },
+  { to: "/field/visits", label: "Route", icon: <RouteIcon className="size-5" /> },
   { to: "/field/sales", label: "Sales", icon: <ShoppingCart className="size-5" /> },
   { to: "/field/stock", label: "Stock", icon: <Boxes className="size-5" /> },
   { to: "/field/more", label: "More", icon: <MoreHorizontal className="size-5" /> },

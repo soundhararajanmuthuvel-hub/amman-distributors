@@ -11,7 +11,7 @@ export const Route = createFileRoute("/field")({
 
 const titles: Record<string, { t: string; s: string }> = {
   "/field": { t: "My Day", s: "Attendance, stock & targets" },
-  "/field/route": { t: "My Route", s: "Shops to visit today" },
+  "/field/visits": { t: "My Route", s: "Shops to visit today" },
   "/field/sales": { t: "New Sale", s: "Bill a shop" },
   "/field/stock": { t: "My Stock", s: "Loaded, sold & in hand" },
   "/field/more": { t: "More", s: "Returns, payments & settings" },
