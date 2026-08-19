@@ -10,18 +10,25 @@ function AdminReturns() {
 
   return (
     <div className="space-y-4">
-      <SectionTitle action={<Pill tone="warning">{`${rows.reduce((a, b) => a + b.qty, 0)} units`}</Pill>}>
+      <SectionTitle
+        action={<Pill tone="warning">{`${rows.reduce((a, b) => a + b.qty, 0)} units`}</Pill>}
+      >
         Route returns
       </SectionTitle>
       {rows.length === 0 ? (
-        <Empty title="No returns recorded" sub="Damaged or unsold stock returned from routes shows here." />
+        <Empty
+          title="No returns recorded"
+          sub="Damaged or unsold stock returned from routes shows here."
+        />
       ) : (
         <div className="space-y-2">
           {rows.map((r) => (
             <Card key={r.id}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-bold text-foreground">{productById(state, r.productId)?.name ?? "—"}</p>
+                  <p className="truncate font-bold text-foreground">
+                    {productById(state, r.productId)?.name ?? "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {r.date} · {state.salesmen.find((s) => s.id === r.salesmanId)?.name}
                     {r.customerId ? ` · ${customerName(state, r.customerId)}` : ""}

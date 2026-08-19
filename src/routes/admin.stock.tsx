@@ -29,7 +29,15 @@ function AdminStock() {
             <Stat label="Allocated" value={`${sumMap(m.allocated)} u`} tone="warning" />
             <Stat label="Available" value={`${sumMap(m.available)} u`} tone="success" />
           </div>
-          <SectionTitle action={<Link to="/admin/purchase"><Btn size="sm" variant="soft">Purchase</Btn></Link>}>
+          <SectionTitle
+            action={
+              <Link to="/admin/purchase">
+                <Btn size="sm" variant="soft">
+                  Purchase
+                </Btn>
+              </Link>
+            }
+          >
             Product wise
           </SectionTitle>
           <Card>
@@ -43,7 +51,7 @@ function AdminStock() {
                   </span>
                 }
                 right={
-                  <span className={m.available[p.id] ?? 0 <= 0 ? "text-danger" : ""}>
+                  <span className={(m.available[p.id] ?? 0 <= 0) ? "text-danger" : ""}>
                     {m.available[p.id] ?? 0} {p.unit}
                   </span>
                 }
@@ -59,7 +67,9 @@ function AdminStock() {
               <Card key={sm.id}>
                 <div className="mb-2 flex items-center justify-between">
                   <p className="font-bold text-foreground">{sm.name}</p>
-                  <span className="text-sm font-semibold tabular-nums">{sumMap(st.current)} u in hand</span>
+                  <span className="text-sm font-semibold tabular-nums">
+                    {sumMap(st.current)} u in hand
+                  </span>
                 </div>
                 {state.products
                   .filter((p) => (st.received[p.id] ?? 0) > 0)
@@ -70,7 +80,9 @@ function AdminStock() {
                       right={`${st.received[p.id] ?? 0} → sold ${st.sold[p.id] ?? 0} · left ${st.current[p.id] ?? 0}`}
                     />
                   ))}
-                {sumMap(st.received) === 0 && <p className="text-sm text-muted-foreground">No stock allocated today.</p>}
+                {sumMap(st.received) === 0 && (
+                  <p className="text-sm text-muted-foreground">No stock allocated today.</p>
+                )}
               </Card>
             );
           })}

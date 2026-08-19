@@ -10,7 +10,10 @@ function CustomerDetail() {
   const c = state.customers.find((x) => x.id === id);
   if (!c) return <Empty title="Shop not found" />;
 
-  const bills = state.sales.filter((s) => s.customerId === c.id).slice().reverse();
+  const bills = state.sales
+    .filter((s) => s.customerId === c.id)
+    .slice()
+    .reverse();
   const due = customerOutstanding(state, c.id);
   const totalQty = bills.reduce((a, b) => a + b.items.reduce((q, i) => q + i.qty, 0), 0);
 
@@ -58,7 +61,9 @@ function CustomerDetail() {
                 </div>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {b.items.map((i) => `${productById(state, i.productId)?.name} ×${i.qty}`).join(", ")}
+                {b.items
+                  .map((i) => `${productById(state, i.productId)?.name} ×${i.qty}`)
+                  .join(", ")}
               </p>
             </Card>
           ))}

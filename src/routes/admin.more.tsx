@@ -1,5 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Package, Undo2, FileBarChart, PackagePlus, Split, CalendarCheck, RotateCcw, LogOut, Route as RouteIcon } from "lucide-react";
+import {
+  Package,
+  Undo2,
+  FileBarChart,
+  PackagePlus,
+  Split,
+  CalendarCheck,
+  RotateCcw,
+  LogOut,
+  Route as RouteIcon,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Card, SectionTitle, useConfirm } from "@/components/kit";
 
@@ -27,7 +37,9 @@ function AdminMore() {
         {links.map((l) => (
           <Link key={l.to} to={l.to}>
             <Card className="flex items-center gap-3 transition hover:border-primary/40">
-              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">{l.icon}</span>
+              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                {l.icon}
+              </span>
               <span className="font-semibold text-foreground">{l.label}</span>
             </Card>
           </Link>
@@ -38,7 +50,12 @@ function AdminMore() {
       <div className="grid gap-2 sm:grid-cols-2">
         <button
           onClick={() =>
-            confirm("Reset demo data?", "All bills, purchases and allocations will be restored to seed data.", reset, "Reset")
+            confirm(
+              "Reset demo data?",
+              "All bills, purchases and allocations will be restored to seed data.",
+              reset,
+              "Reset",
+            )
           }
         >
           <Card className="flex items-center gap-3 text-left transition hover:border-danger/40">

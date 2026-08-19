@@ -4,7 +4,8 @@ import { SaleFlow } from "@/components/SaleFlow";
 
 export const Route = createFileRoute("/field/sales")({
   validateSearch: (search: Record<string, unknown>) => ({
-    customerId: typeof search["customerId"] === "string" ? (search["customerId"] as string) : undefined,
+    customerId:
+      typeof search["customerId"] === "string" ? (search["customerId"] as string) : undefined,
   }),
   component: NewSale,
 });

@@ -30,7 +30,12 @@ function FieldLayout() {
   const meta = titles[pathname] ?? { t: "Field", s: "" };
 
   return (
-    <AppShell nav={fieldNav} title={meta.t} subtitle={meta.s} right={<Pill tone="primary">{me?.name ?? "Salesman"}</Pill>}>
+    <AppShell
+      nav={fieldNav}
+      title={meta.t}
+      subtitle={meta.s}
+      right={<Pill tone="primary">{me?.name ?? "Salesman"}</Pill>}
+    >
       <Outlet />
     </AppShell>
   );

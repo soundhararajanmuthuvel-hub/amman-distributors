@@ -18,7 +18,9 @@ function RouteSetup() {
 
   const shops = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return state.customers.filter((c) => !t || c.name.toLowerCase().includes(t) || c.address.toLowerCase().includes(t));
+    return state.customers.filter(
+      (c) => !t || c.name.toLowerCase().includes(t) || c.address.toLowerCase().includes(t),
+    );
   }, [state.customers, q]);
 
   const countFor = (id: string) => state.customers.filter((c) => c.salesmanId === id).length;
@@ -78,7 +80,9 @@ function RouteSetup() {
               value={c.salesmanId}
               onChange={(e) => {
                 upsertCustomer({ ...c, salesmanId: e.target.value });
-                toast.success(`${c.name} moved to ${state.salesmen.find((s) => s.id === e.target.value)?.name}`);
+                toast.success(
+                  `${c.name} moved to ${state.salesmen.find((s) => s.id === e.target.value)?.name}`,
+                );
               }}
               className="w-40"
             >

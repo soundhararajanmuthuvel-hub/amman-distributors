@@ -28,7 +28,11 @@ function SalesmanDetail() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Sales" value={money(s.salesValue)} tone="primary" />
         <Stat label="Collected" value={money(s.collected)} tone="success" />
-        <Stat label="Pending" value={money(s.pending)} tone={s.pending > 0 ? "danger" : "success"} />
+        <Stat
+          label="Pending"
+          value={money(s.pending)}
+          tone={s.pending > 0 ? "danger" : "success"}
+        />
         <Stat label="In hand" value={`${sumMap(s.stock.current)} u`} tone="info" />
       </div>
 
@@ -43,7 +47,9 @@ function SalesmanDetail() {
               right={`${s.stock.received[p.id] ?? 0} loaded · ${s.stock.sold[p.id] ?? 0} sold · ${s.stock.current[p.id] ?? 0} left`}
             />
           ))}
-        {sumMap(s.stock.received) === 0 && <p className="text-sm text-muted-foreground">No stock allocated today.</p>}
+        {sumMap(s.stock.received) === 0 && (
+          <p className="text-sm text-muted-foreground">No stock allocated today.</p>
+        )}
       </Card>
 
       <SectionTitle>Bills</SectionTitle>
@@ -52,7 +58,11 @@ function SalesmanDetail() {
       ) : (
         <Card>
           {s.sales.map((b) => (
-            <Row key={b.id} left={`${b.time} · ${customerName(state, b.customerId)}`} right={money(b.total)} />
+            <Row
+              key={b.id}
+              left={`${b.time} · ${customerName(state, b.customerId)}`}
+              right={money(b.total)}
+            />
           ))}
         </Card>
       )}

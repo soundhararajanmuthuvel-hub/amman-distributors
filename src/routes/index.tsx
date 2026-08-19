@@ -41,9 +41,24 @@ function Login() {
   };
 
   const roles: { value: Role; label: string; desc: string; icon: React.ReactNode }[] = [
-    { value: "salesman", label: "Salesman", desc: "Route, sales & collection", icon: <Truck className="size-5" /> },
-    { value: "supervisor", label: "Supervisor", desc: "Stock & allocation", icon: <ClipboardList className="size-5" /> },
-    { value: "admin", label: "Owner / Admin", desc: "Full control & reports", icon: <ShieldCheck className="size-5" /> },
+    {
+      value: "salesman",
+      label: "Salesman",
+      desc: "Route, sales & collection",
+      icon: <Truck className="size-5" />,
+    },
+    {
+      value: "supervisor",
+      label: "Supervisor",
+      desc: "Stock & allocation",
+      icon: <ClipboardList className="size-5" />,
+    },
+    {
+      value: "admin",
+      label: "Owner / Admin",
+      desc: "Full control & reports",
+      icon: <ShieldCheck className="size-5" />,
+    },
   ];
 
   return (
@@ -53,24 +68,32 @@ function Login() {
           <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-card">
             <Milk className="size-7" />
           </span>
-          <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-foreground">Amrith Dairy</h1>
+          <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-foreground">
+            Amrith Dairy
+          </h1>
           <p className="text-sm text-muted-foreground">Distribution Management System</p>
         </div>
 
         <Card className="space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Continue as</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Continue as
+          </p>
           {roles.map((r) => (
             <button
               key={r.value}
               type="button"
               onClick={() => setRole(r.value)}
               className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${
-                role === r.value ? "border-primary bg-primary/5" : "border-border bg-card hover:bg-muted"
+                role === r.value
+                  ? "border-primary bg-primary/5"
+                  : "border-border bg-card hover:bg-muted"
               }`}
             >
               <span
                 className={`grid size-10 place-items-center rounded-xl ${
-                  role === r.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  role === r.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
                 }`}
               >
                 {r.icon}
@@ -84,7 +107,9 @@ function Login() {
 
           {role === "salesman" && (
             <div className="rounded-xl bg-muted p-3">
-              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Select salesman</p>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Select salesman
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 {state.salesmen.map((s) => (
                   <button

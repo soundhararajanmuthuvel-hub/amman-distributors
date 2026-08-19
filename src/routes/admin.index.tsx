@@ -18,28 +18,179 @@ import { Card, SectionTitle, Stat, Pill, Btn, StatusPill } from "@/components/ki
 export const Route = createFileRoute("/admin/")({ component: AdminHome });
 
 function AdminHome() {
-  const { state } = useStore();
+  const { state, set } = useStore();
   const t = todayTotals(state);
   const alerts = dropAlerts(state);
 
+  const adminAttendance = state.attendance.find(
+    (a) => a.userId === "admin" && a.date === state.today,
+  );
+
+  const punchIn = () => {
+    const time = new Date().toTimeString().slice(0, 5);
+    set((s) => {
+      if (s.attendance.some((a) => a.userId === "admin" && a.date === s.today)) return s;
+      return {
+        ...s,
+        attendance: [
+          ...s.attendance,
+          {
+            id: `att_admin_${s.today}`,
+            userId: "admin",
+            date: s.today,
+            checkIn: time,
+            status: "present",
+          },
+        ],
+      };
+    });
+  };
+
+  const punchOut = () => {
+    const time = new Date().toTimeString().slice(0, 5);
+    set((s) => {
+      const existing = s.attendance.find((a) => a.userId === "admin" && a.date === s.today);
+      let duration = "";
+      if (existing) {
+        const [startH, startM] = existing.checkIn.split(":").map(Number);
+        const [endH, endM] = time.split(":").map(Number);
+        const diffMinutes = endH * 60 + endM - (startH * 60 + startM);
+        if (diffMinutes >= 0) {
+          const h = Math.floor(diffMinutes / 60);
+          const m = diffMinutes % 60;
+          duration = `${h}h ${m}m`;
+        }
+      }
+      return {
+        ...s,
+        attendance: s.attendance.map((a) =>
+          a.userId === "admin" && a.date === s.today
+            ? { ...a, status: "closed", closedAt: time, workingDuration: duration }
+            : a,
+        ),
+      };
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {/* Admin Self-Attendance module */}
+      <Card className="border-primary/20 bg-primary/5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-foreground">Manager Self-Attendance</p>
+            <p className="text-xs text-muted-foreground">
+              Log your shift presence for accountability
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {!adminAttendance && (
+              <Btn onClick={punchIn} tone="primary">
+                Punch In
+              </Btn>
+            )}
+            {adminAttendance && adminAttendance.status === "present" && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-success bg-success/15 px-2.5 py-1 rounded-full">
+                  Present · In {adminAttendance.checkIn}
+                </span>
+                <Btn onClick={punchOut} variant="outline">
+                  Punch Out
+                </Btn>
+              </div>
+            )}
+            {adminAttendance && adminAttendance.status === "closed" && (
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                  Attendance Completed
+                </span>
+                <span className="text-[10px] text-muted-foreground mt-1">
+                  In: {adminAttendance.checkIn} · Out: {adminAttendance.closedAt} · Duration:{" "}
+                  {adminAttendance.workingDuration}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Today's Sales" value={money(t.salesValue)} sub={`${t.billCount} bills`} tone="primary" icon={<ShoppingCart className="size-4" />} />
-        <Stat label="Cash Collected" value={money(t.collected)} tone="success" icon={<IndianRupee className="size-4" />} />
-        <Stat label="Pending" value={money(t.pending)} tone={t.pending > 0 ? "danger" : "success"} icon={<Clock className="size-4" />} />
-        <Stat label="Total Stock" value={`${t.available} u`} sub={`Opening ${t.opening}`} tone="info" icon={<Boxes className="size-4" />} />
-        <Stat label="New Stock" value={`${t.incoming} u`} sub="Purchased today" tone="info" icon={<PackagePlus className="size-4" />} />
-        <Stat label="Returns" value={`${t.returns} u`} tone="warning" icon={<Undo2 className="size-4" />} />
-        <Stat label="Active Salesmen" value={t.activeSalesmen} sub={`of ${state.salesmen.length}`} tone="success" icon={<Users className="size-4" />} />
-        <Stat label="Shops Visited" value={t.shopsVisited} sub={`of ${state.customers.length}`} tone="primary" icon={<Store className="size-4" />} />
+        <Stat
+          label="Today's Sales"
+          value={money(t.salesValue)}
+          sub={`${t.billCount} bills`}
+          tone="primary"
+          icon={<ShoppingCart className="size-4" />}
+        />
+        <Stat
+          label="Cash Collected"
+          value={money(t.collected)}
+          tone="success"
+          icon={<IndianRupee className="size-4" />}
+        />
+        <Stat
+          label="Pending"
+          value={money(t.pending)}
+          tone={t.pending > 0 ? "danger" : "success"}
+          icon={<Clock className="size-4" />}
+        />
+        <Stat
+          label="Total Stock"
+          value={`${t.available} u`}
+          sub={`Opening ${t.opening}`}
+          tone="info"
+          icon={<Boxes className="size-4" />}
+        />
+        <Stat
+          label="New Stock"
+          value={`${t.incoming} u`}
+          sub="Purchased today"
+          tone="info"
+          icon={<PackagePlus className="size-4" />}
+        />
+        <Stat
+          label="Returns"
+          value={`${t.returns} u`}
+          tone="warning"
+          icon={<Undo2 className="size-4" />}
+        />
+        <Stat
+          label="Active Salesmen"
+          value={t.activeSalesmen}
+          sub={`of ${state.salesmen.length}`}
+          tone="success"
+          icon={<Users className="size-4" />}
+        />
+        <Stat
+          label="Shops Visited"
+          value={t.shopsVisited}
+          sub={`of ${state.customers.length}`}
+          tone="primary"
+          icon={<Store className="size-4" />}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <Link to="/admin/purchase"><Btn variant="soft" className="w-full">Purchase Entry</Btn></Link>
-        <Link to="/admin/allocate"><Btn variant="soft" className="w-full">Allocate Stock</Btn></Link>
-        <Link to="/admin/closing"><Btn variant="soft" className="w-full">Day Closing</Btn></Link>
-        <Link to="/admin/reports"><Btn variant="soft" className="w-full">Reports</Btn></Link>
+        <Link to="/admin/purchase">
+          <Btn variant="soft" className="w-full">
+            Purchase Entry
+          </Btn>
+        </Link>
+        <Link to="/admin/allocate">
+          <Btn variant="soft" className="w-full">
+            Allocate Stock
+          </Btn>
+        </Link>
+        <Link to="/admin/closing">
+          <Btn variant="soft" className="w-full">
+            Day Closing
+          </Btn>
+        </Link>
+        <Link to="/admin/reports">
+          <Btn variant="soft" className="w-full">
+            Reports
+          </Btn>
+        </Link>
       </div>
 
       {alerts.length > 0 && (
@@ -53,12 +204,17 @@ function AdminHome() {
                     <AlertTriangle className="size-5" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-foreground">Customer purchase drop — {a.name}</p>
+                    <p className="text-sm font-bold text-foreground">
+                      Customer purchase drop — {a.name}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      Normal {a.normal} u/day · Recent {a.recent} u/day · Drop {a.dropPct}% over {a.days} days
+                      Normal {a.normal} u/day · Recent {a.recent} u/day · Drop {a.dropPct}% over{" "}
+                      {a.days} days
                     </p>
                     <Link to="/admin/customer/$id" params={{ id: a.customerId }}>
-                      <Btn size="sm" variant="outline" className="mt-2">Ask salesman to check</Btn>
+                      <Btn size="sm" variant="outline" className="mt-2">
+                        Ask salesman to check
+                      </Btn>
                     </Link>
                   </div>
                 </div>
@@ -69,7 +225,9 @@ function AdminHome() {
       )}
 
       <div>
-        <SectionTitle action={<Pill tone="neutral">{`Salesman stock ${t.salesmanStockQty} u`}</Pill>}>
+        <SectionTitle
+          action={<Pill tone="neutral">{`Salesman stock ${t.salesmanStockQty} u`}</Pill>}
+        >
           Live Salesman Status
         </SectionTitle>
         <div className="grid gap-3 lg:grid-cols-2">
@@ -102,7 +260,9 @@ function AdminHome() {
                     <Metric label="Cash" value={money(s.collected)} tone="text-success" />
                     <Metric label="Pending" value={money(s.pending)} tone="text-danger" />
                   </div>
-                  <p className="mt-2 truncate text-xs text-muted-foreground">Last activity: {s.lastActivity}</p>
+                  <p className="mt-2 truncate text-xs text-muted-foreground">
+                    Last activity: {s.lastActivity}
+                  </p>
                 </Card>
               </Link>
             );
@@ -113,10 +273,20 @@ function AdminHome() {
   );
 }
 
-function Metric({ label, value, tone = "text-foreground" }: { label: string; value: string; tone?: string }) {
+function Metric({
+  label,
+  value,
+  tone = "text-foreground",
+}: {
+  label: string;
+  value: string;
+  tone?: string;
+}) {
   return (
     <div className="rounded-xl bg-muted/60 px-1 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       <p className={`text-sm font-bold tabular-nums ${tone}`}>{value}</p>
     </div>
   );

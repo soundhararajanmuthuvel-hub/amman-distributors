@@ -1,4 +1,4 @@
-# Amman distributors 
+# Amman distributors
 
 Build a Complete Dairy Distribution Management System
 
@@ -7,8 +7,6 @@ Build a production-quality Dairy Products Distribution Management System with a 
 The Android/mobile experience is the primary application because salesmen and staff will use it throughout the day. Desktop is an additional interface mainly for administration, monitoring, configuration, and detailed reports.
 
 Do not build this as a generic accounting/ERP dashboard. Design the entire UX around the actual daily workflow of a milk and dairy products distribution business.
-
-
 
 1. CORE BUSINESS WORKFLOW
 
@@ -19,8 +17,6 @@ Morning → Check Old Stock → Receive New Stock → Enter Purchase Bill → Ve
 The system must automatically calculate stock, sales, cash collection, pending amounts, returns, and closing balances wherever possible.
 
 Avoid unnecessary manual calculations.
-
-
 
 2. USER ROLES
 
@@ -112,8 +108,6 @@ Closing stock
 
 Do not expose unnecessary admin features to salesmen.
 
-
-
 3. PRIMARY MOBILE APP
 
 Design the mobile interface for fast field use.
@@ -143,8 +137,6 @@ Clear stock balance
 Confirmation before final submission
 
 The interface should work well on normal Android phones.
-
-
 
 4. ADMIN MOBILE DASHBOARD
 
@@ -202,8 +194,6 @@ Last activity
 
 The admin must be able to check this during the day without waiting for the salesman to return.
 
-
-
 5. MORNING STOCK WORKFLOW
 
 When new stock arrives in the morning:
@@ -239,8 +229,6 @@ New Stock
 Total Stock
 
 Do not force the user to manually calculate totals.
-
-
 
 6. PURCHASE / INCOMING BILL
 
@@ -279,8 +267,6 @@ Old Stock: 20 L
 New Bill: 1,000 L
 
 Total: 1,020 L
-
-
 
 7. PRODUCT MANAGEMENT
 
@@ -324,8 +310,6 @@ Other dairy products
 
 The system must support many products without changing the application structure.
 
-
-
 8. CUSTOMER / SHOP MANAGEMENT
 
 Create a Customer/Shop master.
@@ -353,8 +337,6 @@ Outstanding
 Product-wise prices
 
 Keep customer creation extremely simple.
-
-
 
 9. IMPORTANT PRICING RULE
 
@@ -391,8 +373,6 @@ If an admin needs to change a customer’s price later, provide an admin-only ed
 Do NOT force percentage discounts as the primary pricing model.
 
 The business uses different fixed prices for different shops/products.
-
-
 
 10. SALES FLOW
 
@@ -431,8 +411,6 @@ Total
 Provide + / - quantity controls.
 
 Calculate total automatically.
-
-
 
 11. BILL PAYMENT
 
@@ -476,8 +454,6 @@ Pending = Bill Amount - Amount Received
 
 Do not make the salesman manually calculate this.
 
-
-
 12. CASH DENOMINATION ENTRY
 
 When payment mode is Cash, provide quick denomination buttons.
@@ -520,8 +496,6 @@ UPI
 
 Other payment method if required
 
-
-
 13. DO NOT INCLUDE CREDIT LIMIT IN V1
 
 Do NOT implement:
@@ -544,8 +518,6 @@ Pending
 
 Outstanding
 
-
-
 14. SALESMAN STOCK ALLOCATION
 
 After morning stock verification, admin/supervisor distributes stock to salesmen.
@@ -565,8 +537,6 @@ Salesman D = 270 L
 Automatically reduce main stock and increase each salesman’s stock.
 
 Show a clear allocation summary before confirmation.
-
-
 
 15. SALESMAN ATTENDANCE
 
@@ -591,8 +561,6 @@ Assigned stock
 Route
 
 The salesman should be able to complete attendance quickly.
-
-
 
 16. SALESMAN ROUTE
 
@@ -628,8 +596,6 @@ Payment status
 
 Allow salesman to open each shop and record the sale.
 
-
-
 17. LIVE SALESMAN STOCK
 
 If salesman receives 50 units:
@@ -653,8 +619,6 @@ Current stock = 20
 The salesman should not manually calculate closing stock during the route.
 
 Admin must be able to see the same live balance.
-
-
 
 18. LIVE CASH MONITORING
 
@@ -680,8 +644,6 @@ Returns: 2
 
 This information should update as salesmen submit transactions.
 
-
-
 19. RETURNS
 
 When salesman returns from the route, allow return entry.
@@ -705,8 +667,6 @@ Salesman stock
 and
 
 Main/return stock as appropriate.
-
-
 
 20. CLOSING STOCK
 
@@ -736,8 +696,6 @@ Difference
 
 If there is a difference, clearly highlight it.
 
-
-
 21. NEXT-DAY STOCK
 
 Today’s closing stock must automatically become tomorrow’s opening/old stock.
@@ -755,8 +713,6 @@ Then if new stock = 1,000 L:
 Total available = 1,020 L
 
 The user should not need to manually carry the balance forward.
-
-
 
 22. CUSTOMER PURCHASE TREND ALERT
 
@@ -798,8 +754,6 @@ This should be an informational alert, not an aggressive automatic decision.
 
 Allow configurable thresholds later.
 
-
-
 23. CUSTOMER HISTORY
 
 Customer page should show:
@@ -823,8 +777,6 @@ Average daily quantity
 Recent decrease/increase
 
 Use simple charts where useful.
-
-
 
 24. REPORTS
 
@@ -890,8 +842,6 @@ Cash collected
 
 Pending
 
-
-
 25. DESKTOP VERSION
 
 The desktop version is an additional management interface.
@@ -926,8 +876,6 @@ The desktop and Android app must use the same backend/database and real-time dat
 
 If a salesman creates a sale on Android, the admin desktop dashboard should reflect it.
 
-
-
 26. MOBILE NAVIGATION
 
 For admin:
@@ -941,8 +889,6 @@ For salesman:
 Home | Route | Sales | Stock | More
 
 Keep navigation simple.
-
-
 
 27. DESIGN STYLE
 
@@ -984,8 +930,6 @@ Blue = Informational
 
 Do not make the interface visually complicated.
 
-
-
 28. DASHBOARD CARDS
 
 Admin mobile dashboard should have:
@@ -1007,8 +951,6 @@ Active Salesmen
 Shops Visited
 
 Then a live salesman section.
-
-
 
 29. IMPORTANT AUTOMATIONS
 
@@ -1040,8 +982,6 @@ Admin sees live salesman sales and cash.
 
 Customer purchase drops can generate informational alerts.
 
-
-
 30. DO NOT OVERBUILD V1
 
 Do NOT add unnecessary features.
@@ -1067,8 +1007,6 @@ Unnecessary CRM features
 Focus on:
 
 Stock + Salesman + Customer + Sales + Payment + Returns + Closing Stock + Reports
-
-
 
 31. SAMPLE DATA
 
@@ -1113,8 +1051,6 @@ Murugan Stores
 New Star Supermarket
 
 Use realistic quantities and transactions.
-
-
 
 32. DEMO SCENARIO
 
@@ -1173,8 +1109,6 @@ System calculates closing stock.
 Closing stock becomes next day’s opening/old stock.
 
 The admin dashboard shows the complete business position.
-
-
 
 33. FRONTEND QUALITY REQUIREMENT
 

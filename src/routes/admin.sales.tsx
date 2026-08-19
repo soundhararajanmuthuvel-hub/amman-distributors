@@ -1,7 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useStore, money, customerName } from "@/lib/store";
-import { Card, SectionTitle, Stat, StatusPill, Empty, Segmented, Btn, Input, Field, useConfirm } from "@/components/kit";
+import {
+  Card,
+  SectionTitle,
+  Stat,
+  StatusPill,
+  Empty,
+  Segmented,
+  Btn,
+  Input,
+  Field,
+  useConfirm,
+} from "@/components/kit";
 import type { PayMode } from "@/lib/types";
 
 export const Route = createFileRoute("/admin/sales")({ component: AdminSales });
@@ -18,7 +29,9 @@ function AdminSales() {
     () =>
       state.sales
         .filter((s) => s.date === state.today)
-        .filter((s) => (filter === "all" ? true : filter === "paid" ? s.status === "paid" : s.status !== "paid"))
+        .filter((s) =>
+          filter === "all" ? true : filter === "paid" ? s.status === "paid" : s.status !== "paid",
+        )
         .slice()
         .reverse(),
     [state.sales, state.today, filter],
@@ -32,7 +45,11 @@ function AdminSales() {
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Bills" value={sales.length} tone="primary" />
         <Stat label="Value" value={money(total)} tone="info" />
-        <Stat label="Pending" value={money(total - received)} tone={total - received > 0 ? "danger" : "success"} />
+        <Stat
+          label="Pending"
+          value={money(total - received)}
+          tone={total - received > 0 ? "danger" : "success"}
+        />
       </div>
 
       <Segmented
@@ -54,9 +71,12 @@ function AdminSales() {
             <Card key={s.id}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-bold text-foreground">{customerName(state, s.customerId)}</p>
+                  <p className="truncate font-bold text-foreground">
+                    {customerName(state, s.customerId)}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {s.time} · {state.salesmen.find((x) => x.id === s.salesmanId)?.name} · {s.items.length} items
+                    {s.time} · {state.salesmen.find((x) => x.id === s.salesmanId)?.name} ·{" "}
+                    {s.items.length} items
                   </p>
                 </div>
                 <div className="text-right">
@@ -66,7 +86,9 @@ function AdminSales() {
               </div>
               {s.status !== "paid" && (
                 <div className="mt-3 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-danger">Due {money(s.total - s.received)}</span>
+                  <span className="text-xs font-semibold text-danger">
+                    Due {money(s.total - s.received)}
+                  </span>
                   <Btn
                     size="sm"
                     variant="soft"
@@ -105,10 +127,14 @@ function AdminSales() {
             <Btn
               className="flex-1"
               onClick={() =>
-                confirm("Record payment?", `${money(Number(amount) || 0)} via ${mode.toUpperCase()}`, () => {
-                  addPayment(payFor, Number(amount) || 0, mode);
-                  setPayFor(null);
-                })
+                confirm(
+                  "Record payment?",
+                  `${money(Number(amount) || 0)} via ${mode.toUpperCase()}`,
+                  () => {
+                    addPayment(payFor, Number(amount) || 0, mode);
+                    setPayFor(null);
+                  },
+                )
               }
             >
               Save

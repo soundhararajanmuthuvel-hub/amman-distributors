@@ -1,7 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useStore, mainStock } from "@/lib/store";
-import { Card, Field, Select, Btn, QtyStepper, Row, SectionTitle, useConfirm } from "@/components/kit";
+import {
+  Card,
+  Field,
+  Select,
+  Btn,
+  QtyStepper,
+  Row,
+  SectionTitle,
+  useConfirm,
+} from "@/components/kit";
 
 export const Route = createFileRoute("/admin/allocate")({ component: AllocateStock });
 
@@ -36,7 +45,10 @@ function AllocateStock() {
       <SectionTitle>Load stock</SectionTitle>
       <Card className="space-y-3">
         {state.products.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 border-b border-border pb-3 last:border-0 last:pb-0">
+          <div
+            key={p.id}
+            className="flex items-center gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
+          >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-foreground">{p.name}</p>
               <p className="text-xs text-muted-foreground">

@@ -33,17 +33,46 @@ function FieldHome() {
       </Card>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Sales" value={money(s.salesValue)} sub={`${s.sales.length} bills`} tone="primary" icon={<ShoppingCart className="size-4" />} />
+        <Stat
+          label="Sales"
+          value={money(s.salesValue)}
+          sub={`${s.sales.length} bills`}
+          tone="primary"
+          icon={<ShoppingCart className="size-4" />}
+        />
         <Stat label="Collected" value={money(s.collected)} tone="success" />
-        <Stat label="Pending" value={money(s.pending)} tone={s.pending > 0 ? "danger" : "success"} />
-        <Stat label="Stock in hand" value={`${sumMap(s.stock.current)} u`} tone="info" icon={<Boxes className="size-4" />} />
+        <Stat
+          label="Pending"
+          value={money(s.pending)}
+          tone={s.pending > 0 ? "danger" : "success"}
+        />
+        <Stat
+          label="Stock in hand"
+          value={`${sumMap(s.stock.current)} u`}
+          tone="info"
+          icon={<Boxes className="size-4" />}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <Link to="/field/sales" search={{ customerId: undefined }}><Btn className="w-full">New sale</Btn></Link>
-        <Link to="/field/visits"><Btn variant="soft" className="w-full">My route</Btn></Link>
-        <Link to="/field/stock"><Btn variant="soft" className="w-full">My stock</Btn></Link>
-        <Link to="/field/more"><Btn variant="soft" className="w-full"><Undo2 className="size-4" /> Return</Btn></Link>
+        <Link to="/field/sales" search={{ customerId: undefined }}>
+          <Btn className="w-full">New sale</Btn>
+        </Link>
+        <Link to="/field/visits">
+          <Btn variant="soft" className="w-full">
+            My route
+          </Btn>
+        </Link>
+        <Link to="/field/stock">
+          <Btn variant="soft" className="w-full">
+            My stock
+          </Btn>
+        </Link>
+        <Link to="/field/more">
+          <Btn variant="soft" className="w-full">
+            <Undo2 className="size-4" /> Return
+          </Btn>
+        </Link>
       </div>
 
       <SectionTitle>Recent bills</SectionTitle>
@@ -55,7 +84,10 @@ function FieldHome() {
             .slice()
             .reverse()
             .map((b) => (
-              <div key={b.id} className="flex items-center justify-between border-b border-border py-2 last:border-0">
+              <div
+                key={b.id}
+                className="flex items-center justify-between border-b border-border py-2 last:border-0"
+              >
                 <span className="text-sm text-muted-foreground">
                   {b.time} · {state.customers.find((c) => c.id === b.customerId)?.name}
                 </span>

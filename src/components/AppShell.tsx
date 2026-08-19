@@ -52,7 +52,8 @@ export function AppShell({
   const { logout } = useStore();
   const navigate = useNavigate();
 
-  const isActive = (to: string) => (to.endsWith("/admin") || to.endsWith("/field") ? pathname === to : pathname.startsWith(to));
+  const isActive = (to: string) =>
+    to.endsWith("/admin") || to.endsWith("/field") ? pathname === to : pathname.startsWith(to);
 
   const signOut = () => {
     logout();
@@ -79,7 +80,9 @@ export function AppShell({
               to={n.to}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
-                isActive(n.to) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted",
+                isActive(n.to)
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted",
               )}
             >
               {n.icon}

@@ -2,7 +2,18 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { LogOut } from "lucide-react";
 import { useStore, salesmanStock, money, customerName } from "@/lib/store";
-import { Card, Field, Select, Input, Btn, QtyStepper, SectionTitle, Empty, StatusPill, useConfirm } from "@/components/kit";
+import {
+  Card,
+  Field,
+  Select,
+  Input,
+  Btn,
+  QtyStepper,
+  SectionTitle,
+  Empty,
+  StatusPill,
+  useConfirm,
+} from "@/components/kit";
 import type { PayMode } from "@/lib/types";
 
 export const Route = createFileRoute("/field/more")({ component: FieldMore });
@@ -18,7 +29,10 @@ function FieldMore() {
   const [qty, setQty] = useState(0);
   const [reason, setReason] = useState("Unsold stock");
 
-  const dues = state.sales.filter((s) => s.salesmanId === id && s.status !== "paid").slice().reverse();
+  const dues = state.sales
+    .filter((s) => s.salesmanId === id && s.status !== "paid")
+    .slice()
+    .reverse();
   const [payFor, setPayFor] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
   const [mode, setMode] = useState<PayMode>("cash");
@@ -66,7 +80,9 @@ function FieldMore() {
             <Card key={s.id}>
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-bold text-foreground">{customerName(state, s.customerId)}</p>
+                  <p className="truncate font-bold text-foreground">
+                    {customerName(state, s.customerId)}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {s.date} · due {money(s.total - s.received)}
                   </p>
@@ -87,7 +103,11 @@ function FieldMore() {
               </div>
               {payFor === s.id && (
                 <div className="mt-3 space-y-2">
-                  <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                  <Input
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
                   <Select value={mode} onChange={(e) => setMode(e.target.value as PayMode)}>
                     <option value="cash">Cash</option>
                     <option value="upi">UPI</option>

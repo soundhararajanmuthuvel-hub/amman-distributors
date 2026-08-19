@@ -20,7 +20,10 @@ function MyStock() {
 
       <SectionTitle>Product wise</SectionTitle>
       {loaded.length === 0 ? (
-        <Empty title="No stock loaded today" sub="Ask the supervisor to allocate stock to your route." />
+        <Empty
+          title="No stock loaded today"
+          sub="Ask the supervisor to allocate stock to your route."
+        />
       ) : (
         <Card>
           {loaded.map((p) => (

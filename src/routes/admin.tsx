@@ -46,7 +46,9 @@ function AdminLayout() {
       nav={adminNav}
       title={meta.t}
       subtitle={meta.s}
-      right={<Pill tone="info">{state.session?.role === "supervisor" ? "Supervisor" : "Owner"}</Pill>}
+      right={
+        <Pill tone="info">{state.session?.role === "supervisor" ? "Supervisor" : "Owner"}</Pill>
+      }
     >
       <Outlet />
     </AppShell>

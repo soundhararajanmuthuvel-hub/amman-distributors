@@ -1,14 +1,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
-import {
-  useStore,
-  salesmanStock,
-  customerRate,
-  money,
-  lineTotal,
-  uid,
-} from "@/lib/store";
+import { useStore, salesmanStock, customerRate, money, lineTotal, uid } from "@/lib/store";
 import {
   Card,
   Field,
@@ -67,10 +60,7 @@ export function SaleFlow({
     .map((p) => ({ productId: p.id, qty: qty[p.id] ?? 0, rate: rateFor(p.id) }));
   const total = lineTotal(items);
 
-  const cashCounted = useMemo(
-    () => DENOMS.reduce((a, d) => a + d * (notes[d] ?? 0), 0),
-    [notes],
-  );
+  const cashCounted = useMemo(() => DENOMS.reduce((a, d) => a + d * (notes[d] ?? 0), 0), [notes]);
   const received =
     payStatus === "paid"
       ? total
@@ -167,7 +157,13 @@ export function SaleFlow({
           </Field>
         )}
         <Field label="Shop">
-          <Select value={shopId} onChange={(e) => { setShopId(e.target.value); resetForm(); }}>
+          <Select
+            value={shopId}
+            onChange={(e) => {
+              setShopId(e.target.value);
+              resetForm();
+            }}
+          >
             {shops.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -197,7 +193,10 @@ export function SaleFlow({
           const rate = rateFor(p.id);
           const edited = rates[p.id] !== undefined && saved !== undefined && rates[p.id] !== saved;
           return (
-            <div key={p.id} className="space-y-2 border-b border-border pb-3 last:border-0 last:pb-0">
+            <div
+              key={p.id}
+              className="space-y-2 border-b border-border pb-3 last:border-0 last:pb-0"
+            >
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-foreground">{p.name}</p>
@@ -213,7 +212,9 @@ export function SaleFlow({
               </div>
               {q > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground">Price</span>
+                  <span className="text-xs font-semibold uppercase text-muted-foreground">
+                    Price
+                  </span>
                   <Input
                     inputMode="decimal"
                     className="h-10 w-24 text-center"
@@ -286,7 +287,9 @@ export function SaleFlow({
         )}
         {payStatus !== "pending" && mode === "cash" && (
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cash received</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Cash received
+            </p>
             <div className="grid grid-cols-5 gap-2">
               {DENOMS.map((d) => (
                 <button
@@ -300,7 +303,9 @@ export function SaleFlow({
                   className="rounded-xl border border-border bg-card py-2 text-sm font-bold text-foreground active:scale-95"
                 >
                   ₹{d}
-                  {notes[d] ? <span className="block text-[10px] text-primary">×{notes[d]}</span> : null}
+                  {notes[d] ? (
+                    <span className="block text-[10px] text-primary">×{notes[d]}</span>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -317,7 +322,12 @@ export function SaleFlow({
         )}
         {payStatus === "partial" && !(mode === "cash" && cashCounted > 0) && (
           <Field label="Amount received">
-            <Input inputMode="decimal" value={manual} onChange={(e) => setManual(e.target.value)} placeholder="0" />
+            <Input
+              inputMode="decimal"
+              value={manual}
+              onChange={(e) => setManual(e.target.value)}
+              placeholder="0"
+            />
           </Field>
         )}
         <Row left="Bill amount" right={money(total)} />
@@ -397,10 +407,20 @@ function NewCustomerModal({
     >
       <div className="space-y-3">
         <Field label="Customer / Shop name">
-          <Input value={name} maxLength={100} onChange={(e) => setName(e.target.value)} placeholder="ABC Store" />
+          <Input
+            value={name}
+            maxLength={100}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ABC Store"
+          />
         </Field>
         <Field label="Contact name">
-          <Input value={owner} maxLength={100} onChange={(e) => setOwner(e.target.value)} placeholder="Owner name" />
+          <Input
+            value={owner}
+            maxLength={100}
+            onChange={(e) => setOwner(e.target.value)}
+            placeholder="Owner name"
+          />
         </Field>
         <Field label="Phone number">
           <Input
@@ -412,10 +432,20 @@ function NewCustomerModal({
           />
         </Field>
         <Field label="Address">
-          <Input value={address} maxLength={200} onChange={(e) => setAddress(e.target.value)} placeholder="Street, area" />
+          <Input
+            value={address}
+            maxLength={200}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Street, area"
+          />
         </Field>
         <Field label="Notes" hint="Optional">
-          <Input value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder="Delivery timing, etc." />
+          <Input
+            value={note}
+            maxLength={300}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Delivery timing, etc."
+          />
         </Field>
       </div>
     </Modal>

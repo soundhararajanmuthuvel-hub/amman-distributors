@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useStore, money, salesmanSummary, sumMap, customerOutstanding, productById } from "@/lib/store";
+import {
+  useStore,
+  money,
+  salesmanSummary,
+  sumMap,
+  customerOutstanding,
+  productById,
+} from "@/lib/store";
 import { Card, Segmented, Row, SectionTitle, Empty } from "@/components/kit";
 
 export const Route = createFileRoute("/admin/reports")({ component: Reports });
@@ -42,7 +49,10 @@ function Reports() {
         <Card>
           <SectionTitle>Today</SectionTitle>
           <Row left="Bills" right={sales.length} />
-          <Row left="Units sold" right={sales.reduce((a, b) => a + b.items.reduce((q, i) => q + i.qty, 0), 0)} />
+          <Row
+            left="Units sold"
+            right={sales.reduce((a, b) => a + b.items.reduce((q, i) => q + i.qty, 0), 0)}
+          />
           <Row left="Collected" right={money(sales.reduce((a, b) => a + b.received, 0))} />
           <Row left="Total value" right={money(sales.reduce((a, b) => a + b.total, 0))} strong />
         </Card>
@@ -57,7 +67,11 @@ function Reports() {
               .filter((r) => r.qty > 0)
               .sort((a, b) => b.value - a.value)
               .map((r) => (
-                <Row key={r.p.id} left={`${r.p.name} · ${r.qty} ${r.p.unit}`} right={money(r.value)} />
+                <Row
+                  key={r.p.id}
+                  left={`${r.p.name} · ${r.qty} ${r.p.unit}`}
+                  right={money(r.value)}
+                />
               ))
           )}
         </Card>
@@ -95,7 +109,9 @@ function Reports() {
 
       {tab === "products" && sales.length > 0 && (
         <p className="text-center text-xs text-muted-foreground">
-          Top seller: {productById(state, byProduct.slice().sort((a, b) => b.qty - a.qty)[0]?.p.id ?? "")?.name ?? "—"}
+          Top seller:{" "}
+          {productById(state, byProduct.slice().sort((a, b) => b.qty - a.qty)[0]?.p.id ?? "")
+            ?.name ?? "—"}
         </p>
       )}
     </div>

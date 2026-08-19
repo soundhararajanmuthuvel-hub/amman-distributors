@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1787057420689,
+      "tag": "0000_fat_rhino",
+      "breakpoints": true
+    }
+  ]
+}

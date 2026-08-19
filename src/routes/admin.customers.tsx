@@ -13,7 +13,11 @@ function AdminCustomers() {
   const list = useMemo(() => {
     const t = q.trim().toLowerCase();
     return state.customers.filter(
-      (c) => !t || c.name.toLowerCase().includes(t) || c.owner.toLowerCase().includes(t) || c.phone.includes(t),
+      (c) =>
+        !t ||
+        c.name.toLowerCase().includes(t) ||
+        c.owner.toLowerCase().includes(t) ||
+        c.phone.includes(t),
     );
   }, [state.customers, q]);
 
@@ -21,7 +25,12 @@ function AdminCustomers() {
     <div className="space-y-4">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search shops" value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
+        <Input
+          placeholder="Search shops"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
       {list.length === 0 ? (
@@ -44,7 +53,9 @@ function AdminCustomers() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className={`text-sm font-bold tabular-nums ${due > 0 ? "text-danger" : "text-success"}`}>
+                      <p
+                        className={`text-sm font-bold tabular-nums ${due > 0 ? "text-danger" : "text-success"}`}
+                      >
                         {money(due)}
                       </p>
                       <p className="text-[10px] uppercase text-muted-foreground">outstanding</p>

@@ -4,14 +4,18 @@ import { X } from "lucide-react";
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cn("rounded-2xl border border-border bg-card p-4 shadow-card", className)}>{children}</div>
+    <div className={cn("rounded-2xl border border-border bg-card p-4 shadow-card", className)}>
+      {children}
+    </div>
   );
 }
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">{children}</h2>
+      <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        {children}
+      </h2>
       {action}
     </div>
   );
@@ -54,8 +58,14 @@ export function Stat({
       )}
     >
       <div className="flex items-center gap-2">
-        {icon && <span className={cn("grid size-7 place-items-center rounded-lg", toneBg[tone])}>{icon}</span>}
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+        {icon && (
+          <span className={cn("grid size-7 place-items-center rounded-lg", toneBg[tone])}>
+            {icon}
+          </span>
+        )}
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </span>
       </div>
       <div className="mt-2 text-xl font-bold tabular-nums text-foreground">{value}</div>
       {sub && <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>}
@@ -65,7 +75,9 @@ export function Stat({
 
 export function Pill({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
   return (
-    <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", toneBg[tone])}>{children}</span>
+    <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", toneBg[tone])}>
+      {children}
+    </span>
   );
 }
 
@@ -251,15 +263,15 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-0 sm:items-center sm:p-6">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-        role="presentation"
-      />
+      <div className="absolute inset-0" onClick={onClose} role="presentation" />
       <div className="relative z-10 max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-card p-5 shadow-xl sm:max-w-lg sm:rounded-3xl">
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-lg font-bold text-foreground">{title}</h3>
-          <button type="button" onClick={onClose} className="rounded-lg p-1 text-muted-foreground hover:bg-muted">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-muted-foreground hover:bg-muted"
+          >
             <X className="size-5" />
           </button>
         </div>
@@ -289,7 +301,11 @@ export function useConfirm() {
       title={state.title}
       footer={
         <>
-          <Btn variant="outline" className="flex-1" onClick={() => setState((s) => ({ ...s, open: false }))}>
+          <Btn
+            variant="outline"
+            className="flex-1"
+            onClick={() => setState((s) => ({ ...s, open: false }))}
+          >
             Cancel
           </Btn>
           <Btn

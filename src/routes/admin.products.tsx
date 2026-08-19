@@ -23,7 +23,13 @@ function AdminProducts() {
 
   return (
     <div className="space-y-4">
-      <SectionTitle action={<Btn size="sm" onClick={() => setEdit(blank())}>Add product</Btn>}>
+      <SectionTitle
+        action={
+          <Btn size="sm" onClick={() => setEdit(blank())}>
+            Add product
+          </Btn>
+        }
+      >
         {`${state.products.length} products`}
       </SectionTitle>
 
@@ -34,7 +40,9 @@ function AdminProducts() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="truncate font-bold text-foreground">{p.name}</p>
-                  <Pill tone={p.active ? "success" : "neutral"}>{p.active ? "Active" : "Inactive"}</Pill>
+                  <Pill tone={p.active ? "success" : "neutral"}>
+                    {p.active ? "Active" : "Inactive"}
+                  </Pill>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {p.category} · {p.packSize} · MRP {money(p.mrp)}
@@ -54,7 +62,9 @@ function AdminProducts() {
       <Modal
         open={!!edit}
         onClose={() => setEdit(null)}
-        title={edit && state.products.some((p) => p.id === edit.id) ? "Edit product" : "Add product"}
+        title={
+          edit && state.products.some((p) => p.id === edit.id) ? "Edit product" : "Add product"
+        }
         footer={
           <>
             <Btn variant="outline" className="flex-1" onClick={() => setEdit(null)}>
@@ -76,14 +86,23 @@ function AdminProducts() {
         {edit && (
           <div className="space-y-3">
             <Field label="Name">
-              <Input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
+              <Input
+                value={edit.name}
+                onChange={(e) => setEdit({ ...edit, name: e.target.value })}
+              />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Category">
-                <Input value={edit.category} onChange={(e) => setEdit({ ...edit, category: e.target.value })} />
+                <Input
+                  value={edit.category}
+                  onChange={(e) => setEdit({ ...edit, category: e.target.value })}
+                />
               </Field>
               <Field label="Pack size">
-                <Input value={edit.packSize} onChange={(e) => setEdit({ ...edit, packSize: e.target.value })} />
+                <Input
+                  value={edit.packSize}
+                  onChange={(e) => setEdit({ ...edit, packSize: e.target.value })}
+                />
               </Field>
               <Field label="MRP">
                 <Input

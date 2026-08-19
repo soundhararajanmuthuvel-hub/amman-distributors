@@ -80,10 +80,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Amrith Dairy — Distribution Management" },
-      { name: "description", content: "Stock, salesman, sales, payments and closing stock management for dairy distribution." },
+      {
+        name: "description",
+        content:
+          "Stock, salesman, sales, payments and closing stock management for dairy distribution.",
+      },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Amrith Dairy — Distribution Management" },
-      { property: "og:description", content: "Mobile-first dairy distribution management for salesmen, supervisors and owners." },
+      {
+        property: "og:description",
+        content: "Mobile-first dairy distribution management for salesmen, supervisors and owners.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },

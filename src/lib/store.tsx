@@ -47,16 +47,21 @@ interface Ctx {
   login: (role: Role, salesmanId?: string) => void;
   logout: () => void;
   reset: () => void;
-  addPurchase: (pu: Omit<Purchase, "id">) => void;
-  allocate: (a: Omit<Allocation, "id">) => void;
-  markAttendance: (salesmanId: string) => void;
-  closeDay: (salesmanId: string) => void;
-  recordSale: (s: Omit<Sale, "id">) => Sale;
-  addReturn: (r: Omit<ReturnRec, "id">) => void;
+  addPurchase: (
+    pu: Omit<Purchase, "id"> & { billPhoto?: string; clientTransactionId?: string },
+  ) => Promise<void>;
+  allocate: (a: Omit<Allocation, "id">) => Promise<void>;
+  markAttendance: (userId: string) => Promise<void>;
+  closeDay: (userId: string) => Promise<void>;
+  recordSale: (
+    s: Omit<Sale, "id"> & { denominations?: Record<string, number>; clientTransactionId?: string },
+  ) => Promise<Sale>;
+  addReturn: (r: Omit<ReturnRec, "id"> & { clientTransactionId?: string }) => Promise<void>;
   addPayment: (saleId: string, amount: number, mode: PayMode) => void;
   upsertProduct: (p: Product) => void;
   upsertCustomer: (c: Customer) => void;
   upsertSalesman: (sm: Salesman) => void;
+  syncWithServer: () => Promise<void>;
 }
 
 const StoreContext = createContext<Ctx | null>(null);
@@ -65,10 +70,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => seedState());
   const [hydrated, setHydrated] = useState(false);
 
+  // Define Capacitor-compatible base API URL
+  const getApiUrl = useCallback((path: string) => {
+    const base = import.meta.env.VITE_API_URL || "";
+    return `${base}${path}`;
+  }, []);
+
+  // Sync state from Drizzle database endpoints
+  const syncWithServer = useCallback(async () => {
+    try {
+      const resProducts = await fetch(getApiUrl("/api/products")).then((r) => r.json());
+      const resCustomers = await fetch(getApiUrl("/api/customers")).then((r) => r.json());
+      const resSales = await fetch(getApiUrl("/api/sales")).then((r) => r.json());
+      const resReturns = await fetch(getApiUrl("/api/returns")).then((r) => r.json());
+      const resPurchases = await fetch(getApiUrl("/api/purchases")).then((r) => r.json());
+      const resAllocations = await fetch(getApiUrl("/api/allocations")).then((r) => r.json());
+      const resAttendance = await fetch(getApiUrl("/api/attendance")).then((r) => r.json());
+
+      setState((s) => ({
+        ...s,
+        products: resProducts.length ? resProducts : s.products,
+        customers: resCustomers.length ? resCustomers : s.customers,
+        sales: resSales.length ? resSales : s.sales,
+        returns: resReturns.length ? resReturns : s.returns,
+        purchases: resPurchases.length ? resPurchases : s.purchases,
+        allocations: resAllocations.length ? resAllocations : s.allocations,
+        attendance: resAttendance.length ? resAttendance : s.attendance,
+      }));
+    } catch (e) {
+      console.warn("Failed to synchronize with MySQL server, using local store:", e);
+    }
+  }, [getApiUrl]);
+
   useEffect(() => {
     setState(load());
     setHydrated(true);
-  }, []);
+    syncWithServer();
+  }, [syncWithServer]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -88,56 +126,96 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       login: (role, salesmanId) => set((s) => ({ ...s, session: { role, salesmanId } })),
       logout: () => set((s) => ({ ...s, session: null })),
       reset: () => setState({ ...seedState(), session: null }),
-      addPurchase: (pu) => set((s) => ({ ...s, purchases: [...s.purchases, { ...pu, id: uid("pur") }] })),
-      allocate: (a) => set((s) => ({ ...s, allocations: [...s.allocations, { ...a, id: uid("alc") }] })),
-      markAttendance: (salesmanId) =>
-        set((s) => {
-          if (s.attendance.some((a) => a.salesmanId === salesmanId && a.date === s.today)) return s;
-          return {
-            ...s,
-            attendance: [
-              ...s.attendance,
-              {
-                id: uid("att"),
-                salesmanId,
-                date: s.today,
-                checkIn: new Date().toTimeString().slice(0, 5),
-                status: "present",
-              },
-            ],
-          };
-        }),
-      closeDay: (salesmanId) =>
-        set((s) => ({
-          ...s,
-          attendance: s.attendance.map((a) =>
-            a.salesmanId === salesmanId && a.date === s.today
-              ? { ...a, status: "closed", closedAt: new Date().toTimeString().slice(0, 5) }
-              : a,
-          ),
-        })),
-      recordSale: (sale) => {
-        const withId: Sale = { ...sale, id: uid("sale") };
-        set((s) => {
-          // lock customer prices from the first bill
-          const customers = s.customers.map((c) => {
-            if (c.id !== sale.customerId) return c;
-            const prices = { ...c.prices };
-            for (const it of sale.items) if (prices[it.productId] === undefined) prices[it.productId] = it.rate;
-            return { ...c, prices };
-          });
-          return { ...s, customers, sales: [...s.sales, withId] };
+      addPurchase: async (pu) => {
+        const payload = {
+          userId: state.session?.salesmanId || "admin",
+          purchase: {
+            ...pu,
+            clientTransactionId: pu.clientTransactionId || `tx_${Date.now()}`,
+          },
+        };
+        await fetch(getApiUrl("/api/purchase"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
-        return withId;
+        await syncWithServer();
       },
-      addReturn: (r) => set((s) => ({ ...s, returns: [...s.returns, { ...r, id: uid("ret") }] })),
+      allocate: async (a) => {
+        const payload = {
+          userId: state.session?.salesmanId || "admin",
+          allocation: a,
+        };
+        await fetch(getApiUrl("/api/allocation"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        await syncWithServer();
+      },
+      markAttendance: async (userId) => {
+        await fetch(getApiUrl("/api/attendance"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            date: state.today,
+            checkInTime: new Date().toTimeString().slice(0, 5),
+          }),
+        });
+        await syncWithServer();
+      },
+      closeDay: async (userId) => {
+        await fetch(getApiUrl("/api/closing"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            date: state.today,
+            checkOutTime: new Date().toTimeString().slice(0, 5),
+          }),
+        });
+        await syncWithServer();
+      },
+      recordSale: async (sale) => {
+        const payload = {
+          userId: state.session?.salesmanId || "admin",
+          sale: {
+            ...sale,
+            clientTransactionId: sale.clientTransactionId || `tx_sale_${Date.now()}`,
+          },
+        };
+        const res = await fetch(getApiUrl("/api/sale"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then((r) => r.json());
+        await syncWithServer();
+        return res;
+      },
+      addReturn: async (r) => {
+        const payload = {
+          userId: state.session?.salesmanId || "admin",
+          return: {
+            ...r,
+            clientTransactionId: r.clientTransactionId || `tx_ret_${Date.now()}`,
+          },
+        };
+        await fetch(getApiUrl("/api/return"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        await syncWithServer();
+      },
       addPayment: (saleId, amount, mode) =>
         set((s) => ({
           ...s,
           sales: s.sales.map((sl) => {
             if (sl.id !== saleId) return sl;
             const received = Math.min(sl.total, sl.received + amount);
-            const status: PayStatus = received >= sl.total ? "paid" : received > 0 ? "partial" : "pending";
+            const status: PayStatus =
+              received >= sl.total ? "paid" : received > 0 ? "partial" : "pending";
             return { ...sl, received, status, mode };
           }),
         })),
@@ -162,8 +240,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ? s.salesmen.map((x) => (x.id === sm.id ? sm : x))
             : [...s.salesmen, sm],
         })),
+      syncWithServer,
     };
-  }, [state, set]);
+  }, [state, set, syncWithServer]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -256,11 +335,16 @@ export function salesmanSummary(s: AppState, salesmanId: string, date = s.today)
     attendance: att,
     returnsQty: rets.reduce((a, b) => a + b.qty, 0),
     shopsVisited: new Set(sales.map((x) => x.customerId)).size,
-    lastActivity: last ? `${last.time} · ${customerName(s, last.customerId)}` : att ? `Check-in ${att.checkIn}` : "—",
+    lastActivity: last
+      ? `${last.time} · ${customerName(s, last.customerId)}`
+      : att
+        ? `Check-in ${att.checkIn}`
+        : "—",
   };
 }
 
-export const customerName = (s: AppState, id: string) => s.customers.find((c) => c.id === id)?.name ?? "—";
+export const customerName = (s: AppState, id: string) =>
+  s.customers.find((c) => c.id === id)?.name ?? "—";
 export const productById = (s: AppState, id: string) => s.products.find((p) => p.id === id);
 
 export function customerOutstanding(s: AppState, customerId: string) {
@@ -276,7 +360,10 @@ export function todayTotals(s: AppState, date = s.today) {
   const salesValue = sales.reduce((a, b) => a + b.total, 0);
   const collected = sales.reduce((a, b) => a + b.received, 0);
   const m = mainStock(s, date);
-  const salesmanStockQty = s.salesmen.reduce((a, sm) => a + sumMap(salesmanStock(s, sm.id, date).current), 0);
+  const salesmanStockQty = s.salesmen.reduce(
+    (a, sm) => a + sumMap(salesmanStock(s, sm.id, date).current),
+    0,
+  );
   return {
     salesValue,
     collected,
@@ -318,7 +405,14 @@ export function dropAlerts(s: AppState, thresholdPct = 20): DropAlert[] {
     const normal = baseArr.reduce((a, b) => a + b, 0) / baseArr.length;
     const dropPct = Math.round(((normal - recent) / normal) * 100);
     if (dropPct >= thresholdPct)
-      out.push({ customerId: c.id, name: c.name, normal: Math.round(normal), recent: Math.round(recent), dropPct, days: recentArr.length });
+      out.push({
+        customerId: c.id,
+        name: c.name,
+        normal: Math.round(normal),
+        recent: Math.round(recent),
+        dropPct,
+        days: recentArr.length,
+      });
   }
   return out.sort((a, b) => b.dropPct - a.dropPct);
 }

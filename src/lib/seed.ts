@@ -33,9 +33,21 @@ export const seedProducts: Product[] = [
 ];
 
 export const seedSalesmen: Salesman[] = [
-  { id: "s1", name: "Suresh", phone: "98400 11223", routeName: "Route A — Anna Nagar", active: true },
+  {
+    id: "s1",
+    name: "Suresh",
+    phone: "98400 11223",
+    routeName: "Route A — Anna Nagar",
+    active: true,
+  },
   { id: "s2", name: "Ramesh", phone: "98400 22334", routeName: "Route B — Perambur", active: true },
-  { id: "s3", name: "Karthik", phone: "98400 33445", routeName: "Route C — Ambattur", active: true },
+  {
+    id: "s3",
+    name: "Karthik",
+    phone: "98400 33445",
+    routeName: "Route C — Ambattur",
+    active: true,
+  },
   { id: "s4", name: "Vignesh", phone: "98400 44556", routeName: "Route D — Avadi", active: true },
 ];
 
@@ -63,13 +75,68 @@ const cust = (
 });
 
 export const seedCustomers: Customer[] = [
-  cust("c1", "ABC Store", "Ravi", "90031 11111", "12, Main Rd, Anna Nagar", "s1", { p4: 48, p6: 25, p2: 9.5 }, 420),
-  cust("c2", "Sri Lakshmi Stores", "Lakshmi", "90031 22222", "5, Bazaar St, Anna Nagar", "s1", { p4: 49, p7: 51 }, 0),
-  cust("c3", "Murugan Stores", "Murugan", "90031 33333", "88, Temple St, Perambur", "s2", { p4: 48.5, p3: 23 }, 250),
-  cust("c4", "New Star Supermarket", "Ismail", "90031 44444", "2, Market Rd, Perambur", "s2", {}, 0, "Supermarket"),
-  cust("c5", "Anitha Milk Point", "Anitha", "90031 55555", "31, Cross St, Ambattur", "s3", { p2: 9.5, p1: 5 }, 120),
+  cust(
+    "c1",
+    "ABC Store",
+    "Ravi",
+    "90031 11111",
+    "12, Main Rd, Anna Nagar",
+    "s1",
+    { p4: 48, p6: 25, p2: 9.5 },
+    420,
+  ),
+  cust(
+    "c2",
+    "Sri Lakshmi Stores",
+    "Lakshmi",
+    "90031 22222",
+    "5, Bazaar St, Anna Nagar",
+    "s1",
+    { p4: 49, p7: 51 },
+    0,
+  ),
+  cust(
+    "c3",
+    "Murugan Stores",
+    "Murugan",
+    "90031 33333",
+    "88, Temple St, Perambur",
+    "s2",
+    { p4: 48.5, p3: 23 },
+    250,
+  ),
+  cust(
+    "c4",
+    "New Star Supermarket",
+    "Ismail",
+    "90031 44444",
+    "2, Market Rd, Perambur",
+    "s2",
+    {},
+    0,
+    "Supermarket",
+  ),
+  cust(
+    "c5",
+    "Anitha Milk Point",
+    "Anitha",
+    "90031 55555",
+    "31, Cross St, Ambattur",
+    "s3",
+    { p2: 9.5, p1: 5 },
+    120,
+  ),
   cust("c6", "Vinayaga Stores", "Selvam", "90031 66666", "9, MTH Rd, Ambattur", "s3", {}, 0),
-  cust("c7", "Green Mart", "Bhuvana", "90031 77777", "44, Poonamallee Rd, Avadi", "s4", { p4: 49 }, 380),
+  cust(
+    "c7",
+    "Green Mart",
+    "Bhuvana",
+    "90031 77777",
+    "44, Poonamallee Rd, Avadi",
+    "s4",
+    { p4: 49 },
+    380,
+  ),
   cust("c8", "Sakthi Provisions", "Kumar", "90031 88888", "7, Bus Stand Rd, Avadi", "s4", {}, 0),
 ];
 
@@ -108,10 +175,54 @@ function history(): Sale[] {
   for (let i = 7; i >= 1; i--) {
     const d = dayOffset(-i);
     const q = abcQty[7 - i] ?? 10;
-    out.push(histSale(d, "c1", "s1", [["p4", q, 48], ["p6", 4, 25]], i % 3 === 0 ? 0.6 : 1));
-    out.push(histSale(d, "c2", "s1", [["p4", 15, 49], ["p7", 3, 51]], 1));
-    out.push(histSale(d, "c3", "s2", [["p4", 12, 48.5], ["p3", 10, 23]], i % 4 === 0 ? 0 : 1));
-    out.push(histSale(d, "c5", "s3", [["p2", 40, 9.5], ["p1", 30, 5]], 1));
+    out.push(
+      histSale(
+        d,
+        "c1",
+        "s1",
+        [
+          ["p4", q, 48],
+          ["p6", 4, 25],
+        ],
+        i % 3 === 0 ? 0.6 : 1,
+      ),
+    );
+    out.push(
+      histSale(
+        d,
+        "c2",
+        "s1",
+        [
+          ["p4", 15, 49],
+          ["p7", 3, 51],
+        ],
+        1,
+      ),
+    );
+    out.push(
+      histSale(
+        d,
+        "c3",
+        "s2",
+        [
+          ["p4", 12, 48.5],
+          ["p3", 10, 23],
+        ],
+        i % 4 === 0 ? 0 : 1,
+      ),
+    );
+    out.push(
+      histSale(
+        d,
+        "c5",
+        "s3",
+        [
+          ["p2", 40, 9.5],
+          ["p1", 30, 5],
+        ],
+        1,
+      ),
+    );
     out.push(histSale(d, "c7", "s4", [["p4", 20, 49]], i % 2 === 0 ? 0.7 : 1));
   }
   return out;
@@ -132,7 +243,20 @@ export function seedState(): AppState {
     sales: history(),
     returns: [],
     openingStock: {
-      [today]: { p4: 20, p2: 40, p6: 10, p3: 8, p1: 25, p7: 4, p8: 12, p9: 3, p10: 2, p11: 10, p12: 5, p5: 6 },
+      [today]: {
+        p4: 20,
+        p2: 40,
+        p6: 10,
+        p3: 8,
+        p1: 25,
+        p7: 4,
+        p8: 12,
+        p9: 3,
+        p10: 2,
+        p11: 10,
+        p12: 5,
+        p5: 6,
+      },
     },
     session: null,
     today,
