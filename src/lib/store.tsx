@@ -17,6 +17,10 @@ import type {
   PayStatus,
   Product,
   Purchase,
+  Supplier,
+  SupplierProductPrice,
+  CashTransaction,
+  User,
   ReturnRec,
   Role,
   Sale,
@@ -29,15 +33,25 @@ let seq = 0;
 export const uid = (pre: string) => `${pre}_${Date.now().toString(36)}${(seq++).toString(36)}`;
 
 function load(): AppState {
-  if (typeof window === "undefined") return seedState();
+  const seed = seedState();
+  if (typeof window === "undefined") return seed;
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return seedState();
-    const parsed = JSON.parse(raw) as AppState;
-    if (!parsed.products?.length) return seedState();
-    return { ...parsed, today: todayStr() };
+    if (!raw) return seed;
+    const parsed = JSON.parse(raw) as Partial<AppState>;
+    if (!parsed.products?.length) return seed;
+    return {
+      ...seed,
+      ...parsed,
+      users: parsed.users?.length ? (parsed.users as any) : seed.users,
+      products: parsed.products?.length ? (parsed.products as any) : seed.products,
+      suppliers: parsed.suppliers?.length ? (parsed.suppliers as any) : seed.suppliers,
+      supplierPrices: parsed.supplierPrices?.length ? (parsed.supplierPrices as any) : seed.supplierPrices,
+      cashTransactions: parsed.cashTransactions?.length ? (parsed.cashTransactions as any) : seed.cashTransactions,
+      today: todayStr(),
+    };
   } catch {
-    return seedState();
+    return seed;
   }
 }
 
@@ -59,8 +73,18 @@ interface Ctx {
   addReturn: (r: Omit<ReturnRec, "id"> & { clientTransactionId?: string }) => Promise<void>;
   addPayment: (saleId: string, amount: number, mode: PayMode) => void;
   upsertProduct: (p: Product) => void;
+  upsertSupplier: (s: Supplier) => Promise<void>;
+  addSupplierPayment: (payment: {
+    supplierId: string;
+    amount: number;
+    mode: "cash" | "upi" | "bank" | "other";
+    date: string;
+    description?: string;
+  }) => Promise<void>;
   upsertCustomer: (c: Customer) => void;
   upsertSalesman: (sm: Salesman) => void;
+  upsertUser: (u: User) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
   syncWithServer: () => Promise<void>;
 }
 
@@ -72,7 +96,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Define Capacitor-compatible base API URL
   const getApiUrl = useCallback((path: string) => {
-    const base = import.meta.env.VITE_API_URL || "";
+    const base = import.meta.env["VITE_API_URL"] || "";
     return `${base}${path}`;
   }, []);
 
@@ -80,6 +104,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const syncWithServer = useCallback(async () => {
     try {
       const resProducts = await fetch(getApiUrl("/api/products")).then((r) => r.json());
+      const resSuppliers = await fetch(getApiUrl("/api/suppliers")).then((r) => r.json());
+      const resSupplierPrices = await fetch(getApiUrl("/api/supplier-prices")).then((r) => r.json());
+      const resCashTransactions = await fetch(getApiUrl("/api/cash-transactions")).then((r) => r.json());
       const resCustomers = await fetch(getApiUrl("/api/customers")).then((r) => r.json());
       const resSales = await fetch(getApiUrl("/api/sales")).then((r) => r.json());
       const resReturns = await fetch(getApiUrl("/api/returns")).then((r) => r.json());
@@ -89,13 +116,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       setState((s) => ({
         ...s,
-        products: resProducts.length ? resProducts : s.products,
-        customers: resCustomers.length ? resCustomers : s.customers,
-        sales: resSales.length ? resSales : s.sales,
-        returns: resReturns.length ? resReturns : s.returns,
-        purchases: resPurchases.length ? resPurchases : s.purchases,
-        allocations: resAllocations.length ? resAllocations : s.allocations,
-        attendance: resAttendance.length ? resAttendance : s.attendance,
+        products: Array.isArray(resProducts) && resProducts.length ? resProducts : s.products,
+        suppliers: Array.isArray(resSuppliers) && resSuppliers.length ? resSuppliers : s.suppliers,
+        supplierPrices: Array.isArray(resSupplierPrices) && resSupplierPrices.length ? resSupplierPrices : s.supplierPrices,
+        cashTransactions: Array.isArray(resCashTransactions) && resCashTransactions.length ? resCashTransactions : s.cashTransactions,
+        customers: Array.isArray(resCustomers) && resCustomers.length ? resCustomers : s.customers,
+        sales: Array.isArray(resSales) && resSales.length ? resSales : s.sales,
+        returns: Array.isArray(resReturns) && resReturns.length ? resReturns : s.returns,
+        purchases: Array.isArray(resPurchases) && resPurchases.length ? resPurchases : s.purchases,
+        allocations: Array.isArray(resAllocations) && resAllocations.length ? resAllocations : s.allocations,
+        attendance: Array.isArray(resAttendance) && resAttendance.length ? resAttendance : s.attendance,
       }));
     } catch (e) {
       console.warn("Failed to synchronize with MySQL server, using local store:", e);
@@ -127,86 +157,258 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       logout: () => set((s) => ({ ...s, session: null })),
       reset: () => setState({ ...seedState(), session: null }),
       addPurchase: async (pu) => {
-        const payload = {
-          userId: state.session?.salesmanId || "admin",
-          purchase: {
-            ...pu,
-            clientTransactionId: pu.clientTransactionId || `tx_${Date.now()}`,
-          },
+        const purchaseId = uid("pur");
+        const paidAmount = Number(pu.paidAmount ?? pu.total ?? 0);
+        const pendingAmount = Math.max(0, (pu.total ?? 0) - paidAmount);
+        const newPurchase: Purchase = {
+          id: purchaseId,
+          date: pu.date || state.today,
+          supplierId: pu.supplierId,
+          supplier: pu.supplier,
+          billNo: pu.billNo,
+          items: pu.items,
+          total: pu.total,
+          paidAmount,
+          pendingAmount,
+          paymentStatus: pu.paymentStatus || (paidAmount >= pu.total ? "paid" : paidAmount > 0 ? "partial" : "pending"),
+          paymentMode: pu.paymentMode || "cash",
+          billPhoto: pu.billPhoto,
         };
-        await fetch(getApiUrl("/api/purchase"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+
+        // 1. Optimistically update local state immediately (stock, supplier, cash, prices)
+        set((s) => {
+          // Update product prices & primary supplier
+          const updatedProducts = s.products.map((prd) => {
+            const match = pu.items.find((it) => it.productId === prd.id);
+            if (match) {
+              return {
+                ...prd,
+                currentPurchasePrice: match.rate,
+                supplierId: pu.supplierId || prd.supplierId,
+              };
+            }
+            return prd;
+          });
+
+          // Record Price History entries
+          const newPrices: SupplierProductPrice[] = pu.items.map((it) => {
+            const hist = s.supplierPrices
+              .filter((sp) => sp.supplierId === pu.supplierId && sp.productId === it.productId)
+              .slice()
+              .reverse();
+            const prev = hist[0]?.purchasePrice ?? s.products.find((p) => p.id === it.productId)?.currentPurchasePrice ?? it.rate;
+            const diff = it.rate - prev;
+            return {
+              id: uid("spp"),
+              supplierId: pu.supplierId || "sup1",
+              productId: it.productId,
+              purchasePrice: it.rate,
+              previousPrice: prev,
+              diffAmount: diff,
+              percentageChange: prev > 0 ? (diff / prev) * 100 : 0,
+              invoiceId: purchaseId,
+              effectiveDate: pu.date || s.today,
+            };
+          });
+
+          // Update supplier payable
+          const updatedSuppliers = s.suppliers.map((sup) => {
+            if (sup.id === pu.supplierId || sup.name === pu.supplier) {
+              return {
+                ...sup,
+                currentPayable: sup.currentPayable + pendingAmount,
+              };
+            }
+            return sup;
+          });
+
+          // Record cash outflow if paid
+          const newTxs: CashTransaction[] = [...s.cashTransactions];
+          if (paidAmount > 0) {
+            newTxs.push({
+              id: uid("ctx"),
+              date: pu.date || s.today,
+              time: new Date().toTimeString().slice(0, 5),
+              type: "SUPPLIER_PAYMENT",
+              amount: paidAmount,
+              mode: pu.paymentMode || "cash",
+              partyName: pu.supplier,
+              referenceId: purchaseId,
+              description: `Payment for bill ${pu.billNo}`,
+            });
+          }
+
+          return {
+            ...s,
+            purchases: [newPurchase, ...s.purchases],
+            products: updatedProducts,
+            suppliers: updatedSuppliers,
+            supplierPrices: [...s.supplierPrices, ...newPrices],
+            cashTransactions: newTxs,
+          };
         });
-        await syncWithServer();
+
+        // 2. Persist to server / MySQL
+        try {
+          const payload = {
+            userId: state.session?.salesmanId || "admin",
+            purchase: {
+              ...pu,
+              clientTransactionId: pu.clientTransactionId || `tx_${Date.now()}`,
+            },
+          };
+          await fetch(getApiUrl("/api/purchase"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.warn("Backend purchase sync failed, local store updated:", e);
+        }
       },
       allocate: async (a) => {
-        const payload = {
-          userId: state.session?.salesmanId || "admin",
-          allocation: a,
-        };
-        await fetch(getApiUrl("/api/allocation"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        await syncWithServer();
+        const allocId = uid("al");
+        set((s) => ({
+          ...s,
+          allocations: [{ id: allocId, ...a }, ...s.allocations],
+        }));
+
+        try {
+          const payload = {
+            userId: state.session?.salesmanId || "admin",
+            allocation: a,
+          };
+          await fetch(getApiUrl("/api/allocation"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.warn("Backend allocation sync failed, local store updated:", e);
+        }
       },
       markAttendance: async (userId) => {
-        await fetch(getApiUrl("/api/attendance"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            date: state.today,
-            checkInTime: new Date().toTimeString().slice(0, 5),
-          }),
+        set((s) => {
+          const time = new Date().toTimeString().slice(0, 5);
+          if (s.attendance.some((x) => x.userId === userId && x.date === s.today)) return s;
+          return {
+            ...s,
+            attendance: [
+              ...s.attendance,
+              {
+                id: uid("att"),
+                salesmanId: userId,
+                userId,
+                date: s.today,
+                checkIn: time,
+                status: "present",
+              },
+            ],
+          };
         });
-        await syncWithServer();
+        try {
+          await fetch(getApiUrl("/api/attendance"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId,
+              date: state.today,
+              checkInTime: new Date().toTimeString().slice(0, 5),
+            }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.warn("Attendance sync failed:", e);
+        }
       },
       closeDay: async (userId) => {
-        await fetch(getApiUrl("/api/closing"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            date: state.today,
-            checkOutTime: new Date().toTimeString().slice(0, 5),
-          }),
-        });
-        await syncWithServer();
+        set((s) => ({
+          ...s,
+          attendance: s.attendance.map((x) =>
+            x.userId === userId && x.date === s.today
+              ? { ...x, status: "closed", closedAt: new Date().toTimeString().slice(0, 5) }
+              : x,
+          ),
+        }));
+        try {
+          await fetch(getApiUrl("/api/closing"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId,
+              date: state.today,
+              checkOutTime: new Date().toTimeString().slice(0, 5),
+            }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.warn("Closing sync failed:", e);
+        }
       },
       recordSale: async (sale) => {
-        const payload = {
-          userId: state.session?.salesmanId || "admin",
-          sale: {
-            ...sale,
-            clientTransactionId: sale.clientTransactionId || `tx_sale_${Date.now()}`,
-          },
+        const saleId = uid("sale");
+        const newSale: Sale = {
+          id: saleId,
+          date: sale.date || state.today,
+          time: (sale as any).time || new Date().toTimeString().slice(0, 5),
+          salesmanId: sale.salesmanId,
+          customerId: sale.customerId,
+          items: sale.items,
+          total: sale.total,
+          received: sale.received,
+          status: sale.status,
+          mode: sale.mode,
+          denominations: sale.denominations,
         };
-        const res = await fetch(getApiUrl("/api/sale"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).then((r) => r.json());
-        await syncWithServer();
-        return res;
+
+        set((s) => ({
+          ...s,
+          sales: [newSale, ...s.sales],
+        }));
+
+        try {
+          const payload = {
+            userId: state.session?.salesmanId || "admin",
+            sale: newSale,
+          };
+          const res = await fetch(getApiUrl("/api/sale"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          }).then((r) => r.json());
+          await syncWithServer();
+          return res;
+        } catch (e) {
+          console.warn("Sale sync failed:", e);
+          return newSale;
+        }
       },
       addReturn: async (r) => {
-        const payload = {
-          userId: state.session?.salesmanId || "admin",
-          return: {
-            ...r,
-            clientTransactionId: r.clientTransactionId || `tx_ret_${Date.now()}`,
-          },
-        };
-        await fetch(getApiUrl("/api/return"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        await syncWithServer();
+        const retId = uid("ret");
+        set((s) => ({
+          ...s,
+          returns: [{ id: retId, ...r }, ...s.returns],
+        }));
+
+        try {
+          const payload = {
+            userId: state.session?.salesmanId || "admin",
+            return: {
+              ...r,
+              clientTransactionId: r.clientTransactionId || `tx_ret_${Date.now()}`,
+            },
+          };
+          await fetch(getApiUrl("/api/return"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.warn("Return sync failed:", e);
+        }
       },
       addPayment: (saleId, amount, mode) =>
         set((s) => ({
@@ -219,30 +421,132 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             return { ...sl, received, status, mode };
           }),
         })),
-      upsertProduct: (p) =>
+      upsertProduct: async (p) => {
         set((s) => ({
           ...s,
           products: s.products.some((x) => x.id === p.id)
             ? s.products.map((x) => (x.id === p.id ? p : x))
             : [...s.products, p],
-        })),
-      upsertCustomer: (c) =>
+        }));
+        try {
+          await fetch(getApiUrl("/api/product"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ product: p }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.error("Failed to persist product:", e);
+        }
+      },
+      upsertSupplier: async (sup) => {
+        set((s) => ({
+          ...s,
+          suppliers: s.suppliers.some((x) => x.id === sup.id)
+            ? s.suppliers.map((x) => (x.id === sup.id ? sup : x))
+            : [...s.suppliers, sup],
+        }));
+        try {
+          await fetch(getApiUrl("/api/supplier"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ supplier: sup }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.error("Failed to persist supplier:", e);
+        }
+      },
+      addSupplierPayment: async (payment) => {
+        try {
+          await fetch(getApiUrl("/api/supplier-payment"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: state.session?.salesmanId || "admin",
+              payment,
+            }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.error("Failed to record supplier payment:", e);
+        }
+      },
+      upsertCustomer: async (c) => {
         set((s) => ({
           ...s,
           customers: s.customers.some((x) => x.id === c.id)
             ? s.customers.map((x) => (x.id === c.id ? c : x))
             : [...s.customers, c],
-        })),
-      upsertSalesman: (sm) =>
+        }));
+        try {
+          await fetch(getApiUrl("/api/customer"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customer: c }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.error("Failed to persist customer:", e);
+        }
+      },
+      upsertSalesman: async (sm) => {
         set((s) => ({
           ...s,
           salesmen: s.salesmen.some((x) => x.id === sm.id)
             ? s.salesmen.map((x) => (x.id === sm.id ? sm : x))
             : [...s.salesmen, sm],
-        })),
+        }));
+        try {
+          await fetch(getApiUrl("/api/user"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: sm.id,
+              name: sm.name,
+              phone: sm.phone,
+              email: null,
+              role: "salesman",
+            }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.error("Failed to persist salesman:", e);
+        }
+      },
+      upsertUser: async (u) => {
+        set((s) => ({
+          ...s,
+          users: s.users.some((x) => x.id === u.id)
+            ? s.users.map((x) => (x.id === u.id ? u : x))
+            : [...s.users, u],
+        }));
+        try {
+          await fetch(getApiUrl("/api/user"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: u.id,
+              name: u.name,
+              phone: u.phone,
+              email: u.email || null,
+              role: u.role,
+            }),
+          });
+          await syncWithServer();
+        } catch (e) {
+          console.error("Failed to persist user:", e);
+        }
+      },
+      deleteUser: async (id) => {
+        set((s) => ({
+          ...s,
+          users: s.users.filter((u) => u.id !== id),
+        }));
+      },
       syncWithServer,
     };
-  }, [state, set, syncWithServer]);
+  }, [state, set, syncWithServer, getApiUrl]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -268,7 +572,7 @@ export function mainStock(s: AppState, date = s.today) {
   const allocated: StockMap = {};
   const returned: StockMap = {};
   for (const pu of s.purchases.filter((x) => x.date === date))
-    for (const it of pu.items) add(incoming, it.productId, it.qty);
+    for (const it of pu.items) add(incoming, it.productId, it.verifiedQty ?? (it as any).qty ?? 0);
   for (const al of s.allocations.filter((x) => x.date === date))
     for (const it of al.items) add(allocated, it.productId, it.qty);
   for (const r of s.returns.filter((x) => x.date === date)) add(returned, r.productId, r.qty);
@@ -417,6 +721,70 @@ export function dropAlerts(s: AppState, thresholdPct = 20): DropAlert[] {
   return out.sort((a, b) => b.dropPct - a.dropPct);
 }
 
+export function supplierOutstanding(s: AppState, supplierId: string) {
+  const sup = (s.suppliers || []).find((x) => x.id === supplierId);
+  return sup ? sup.currentPayable : 0;
+}
+
+export const supplierById = (s: AppState, id: string) => (s.suppliers || []).find((sup) => sup.id === id);
+
+export function cashFlowSummary(s: AppState, date = s.today) {
+  // Cash Transactions for given date
+  const txs = (s.cashTransactions || []).filter((t) => t.date === date);
+  const openingTx = (s.cashTransactions || []).find((t) => t.type === "OPENING_BALANCE" && t.date === date);
+  const openingCash = openingTx ? openingTx.amount : 15000;
+
+  const collections = txs
+    .filter((t) => t.type === "CUSTOMER_COLLECTION")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // Fallback: If no explicit cashTransaction recorded yet, use sales collection today
+  const actualCollections = collections > 0 ? collections : (s.sales || [])
+    .filter((x) => x.date === date)
+    .reduce((sum, x) => sum + x.received, 0);
+
+  const supplierPayments = txs
+    .filter((t) => t.type === "SUPPLIER_PAYMENT")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const expenses = txs
+    .filter((t) => t.type === "EXPENSE")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const otherInflows = txs
+    .filter((t) => t.type === "OTHER_INFLOW")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const currentCash = openingCash + actualCollections + otherInflows - supplierPayments - expenses;
+
+  // Purchases today
+  const todayPurchases = (s.purchases || []).filter((p) => p.date === date);
+  const purchaseValue = todayPurchases.reduce((sum, p) => sum + p.total, 0);
+  const purchasePaid = todayPurchases.reduce((sum, p) => sum + (p.paidAmount ?? 0), 0);
+  const purchasePending = purchaseValue - purchasePaid;
+
+  return {
+    openingCash,
+    collections: actualCollections,
+    supplierPayments,
+    expenses,
+    otherInflows,
+    currentCash,
+    purchaseValue,
+    purchasePaid,
+    purchasePending,
+  };
+}
+
+export function totalStockValue(s: AppState) {
+  const m = mainStock(s);
+  return (s.products || []).reduce((acc, p) => {
+    const qty = Math.max(0, m.available[p.id] ?? 0);
+    const purchaseVal = p.currentPurchasePrice ?? p.rate ?? 0;
+    return acc + qty * purchaseVal;
+  }, 0);
+}
+
 export function customerRate(c: Customer | undefined, p: Product) {
   return c?.prices[p.id] ?? p.rate;
 }
@@ -425,3 +793,4 @@ export const money = (n: number) =>
   "₹" + (Math.round(n * 100) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
 export const lineTotal = (items: LineItem[]) => items.reduce((a, b) => a + b.qty * b.rate, 0);
+

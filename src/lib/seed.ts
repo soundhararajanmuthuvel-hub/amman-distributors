@@ -1,4 +1,4 @@
-import type { AppState, Customer, Product, Sale, Salesman } from "./types";
+import type { AppState, Customer, Product, Sale, Salesman, Supplier, SupplierProductPrice, CashTransaction, User } from "./types";
 
 export const todayStr = () => new Date().toISOString().slice(0, 10);
 export const dayOffset = (n: number) => {
@@ -6,6 +6,52 @@ export const dayOffset = (n: number) => {
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 };
+
+export const seedUsers: User[] = [
+  {
+    id: "user_owner",
+    name: "Dinesh Soundhararajan",
+    phone: "98410 00001",
+    email: "owner@ammandistributors.com",
+    role: "superadmin",
+    permissions: ["all", "manage_users", "manage_financials", "audit_logs", "delete_records"],
+    active: true,
+  },
+  {
+    id: "user_admin",
+    name: "Soundhararajan M (General Manager)",
+    phone: "98410 00002",
+    email: "admin@ammandistributors.com",
+    role: "admin",
+    permissions: ["stock_entry", "billing", "allocations", "purchases", "reports", "supplier_payments"],
+    active: true,
+  },
+  {
+    id: "user_sup1",
+    name: "Karthikeyan (Godown Supervisor)",
+    phone: "98410 00003",
+    email: "supervisor@ammandistributors.com",
+    role: "supervisor",
+    permissions: ["stock_entry", "allocations", "returns"],
+    active: true,
+  },
+  {
+    id: "s1",
+    name: "Suresh (Field Staff)",
+    phone: "98400 11223",
+    role: "salesman",
+    permissions: ["field_sales", "view_route"],
+    active: true,
+  },
+  {
+    id: "s2",
+    name: "Ramesh (Field Staff)",
+    phone: "98400 22334",
+    role: "salesman",
+    permissions: ["field_sales", "view_route"],
+    active: true,
+  },
+];
 
 const p = (
   id: string,
@@ -15,21 +61,78 @@ const p = (
   unit: string,
   mrp: number,
   rate: number,
-): Product => ({ id, name, category, packSize, unit, mrp, rate, active: true });
+  currentPurchasePrice: number,
+  sku: string,
+  supplierId = "sup1",
+  minStock = 15,
+): Product => ({
+  id,
+  name,
+  category,
+  packSize,
+  unit,
+  mrp,
+  rate,
+  currentPurchasePrice,
+  sku,
+  supplierId,
+  minStock,
+  active: true,
+});
+
+export const seedSuppliers: Supplier[] = [
+  {
+    id: "sup1",
+    name: "Amman Dairy Plant",
+    code: "SUP-ADP",
+    phone: "98410 55667",
+    altPhone: "044-24556677",
+    address: "Plot 42, SIDCO Industrial Estate, Ambattur, Chennai",
+    gstin: "33AAAAA0000A1Z5",
+    paymentTerms: "Weekly Net 7",
+    openingBalance: 0,
+    currentPayable: 12500,
+    active: true,
+  },
+  {
+    id: "sup2",
+    name: "Aavin Milk Union Ltd",
+    code: "SUP-AVN",
+    phone: "98410 88990",
+    address: "Pasumpon Muthuramalingam Salai, Nandanam, Chennai",
+    gstin: "33AABCT1234F1Z8",
+    paymentTerms: "Immediate / Advance",
+    openingBalance: 0,
+    currentPayable: 0,
+    active: true,
+  },
+  {
+    id: "sup3",
+    name: "Hatsun Agro Product",
+    code: "SUP-HAP",
+    phone: "98410 99001",
+    address: "Attur Main Road, Ramalingapuram, Salem",
+    gstin: "33AABCH5678K1Z2",
+    paymentTerms: "15 Days Credit",
+    openingBalance: 0,
+    currentPayable: 4500,
+    active: true,
+  },
+];
 
 export const seedProducts: Product[] = [
-  p("p1", "Milk 100 ml", "Milk", "100 ml", "pkt", 6, 5.4),
-  p("p2", "Milk 200 ml", "Milk", "200 ml", "pkt", 11, 10),
-  p("p3", "Milk 500 ml", "Milk", "500 ml", "pkt", 26, 24),
-  p("p4", "Milk 1 L", "Milk", "1 L", "pkt", 54, 50),
-  p("p5", "Toned Milk 1 L", "Milk", "1 L", "pkt", 50, 46),
-  p("p6", "Curd 500 g", "Curd", "500 g", "cup", 30, 27),
-  p("p7", "Curd 1 kg", "Curd", "1 kg", "pack", 58, 53),
-  p("p8", "Butter Milk 200 ml", "Beverage", "200 ml", "pkt", 10, 9),
-  p("p9", "Paneer 200 g", "Paneer", "200 g", "pack", 95, 88),
-  p("p10", "Ghee 500 ml", "Ghee", "500 ml", "jar", 320, 300),
-  p("p11", "Flavoured Milk 180 ml", "Beverage", "180 ml", "bottle", 25, 22),
-  p("p12", "Butter 100 g", "Butter", "100 g", "pack", 60, 55),
+  p("p1", "Milk 100 ml", "Milk", "100 ml", "pkt", 6, 5.4, 4.8, "SKU-M100", "sup1", 30),
+  p("p2", "Milk 200 ml", "Milk", "200 ml", "pkt", 11, 10, 8.8, "SKU-M200", "sup1", 40),
+  p("p3", "Milk 500 ml", "Milk", "500 ml", "pkt", 26, 24, 21.5, "SKU-M500", "sup1", 50),
+  p("p4", "Milk 1 L", "Milk", "1 L", "pkt", 54, 50, 45.0, "SKU-M1000", "sup1", 40),
+  p("p5", "Toned Milk 1 L", "Milk", "1 L", "pkt", 50, 46, 41.0, "SKU-TM1000", "sup1", 20),
+  p("p6", "Curd 500 g", "Curd", "500 g", "cup", 30, 27, 23.5, "SKU-C500", "sup1", 25),
+  p("p7", "Curd 1 kg", "Curd", "1 kg", "pack", 58, 53, 47.0, "SKU-C1000", "sup1", 15),
+  p("p8", "Butter Milk 200 ml", "Beverage", "200 ml", "pkt", 10, 9, 7.5, "SKU-BM200", "sup1", 30),
+  p("p9", "Paneer 200 g", "Paneer", "200 g", "pack", 95, 88, 76.0, "SKU-PAN200", "sup3", 10),
+  p("p10", "Ghee 500 ml", "Ghee", "500 ml", "jar", 320, 300, 260.0, "SKU-GH500", "sup3", 5),
+  p("p11", "Flavoured Milk 180 ml", "Beverage", "180 ml", "bottle", 25, 22, 18.0, "SKU-FM180", "sup2", 20),
+  p("p12", "Butter 100 g", "Butter", "100 g", "pack", 60, 55, 48.0, "SKU-BUT100", "sup3", 10),
 ];
 
 export const seedSalesmen: Salesman[] = [
@@ -232,6 +335,52 @@ export function seedState(): AppState {
   const today = todayStr();
   return {
     products: seedProducts,
+    suppliers: seedSuppliers,
+    supplierPrices: [
+      {
+        id: "spp_1",
+        supplierId: "sup1",
+        productId: "p3",
+        purchasePrice: 21.5,
+        previousPrice: 20.0,
+        diffAmount: 1.5,
+        percentageChange: 7.5,
+        effectiveDate: dayOffset(-5),
+      },
+      {
+        id: "spp_2",
+        supplierId: "sup1",
+        productId: "p4",
+        purchasePrice: 45.0,
+        previousPrice: 45.0,
+        diffAmount: 0,
+        percentageChange: 0,
+        effectiveDate: dayOffset(-5),
+      },
+      {
+        id: "spp_3",
+        supplierId: "sup1",
+        productId: "p6",
+        purchasePrice: 23.5,
+        previousPrice: 24.5,
+        diffAmount: -1.0,
+        percentageChange: -4.08,
+        effectiveDate: dayOffset(-5),
+      },
+    ],
+    cashTransactions: [
+      {
+        id: "ctx_open",
+        date: today,
+        time: "06:00",
+        type: "OPENING_BALANCE",
+        amount: 15000,
+        mode: "cash",
+        partyName: "Cash in Hand",
+        description: "Opening cash in drawer",
+      },
+    ],
+    users: seedUsers,
     customers: seedCustomers,
     salesmen: seedSalesmen,
     attendance: [
@@ -244,18 +393,18 @@ export function seedState(): AppState {
     returns: [],
     openingStock: {
       [today]: {
-        p4: 20,
-        p2: 40,
-        p6: 10,
-        p3: 8,
-        p1: 25,
-        p7: 4,
-        p8: 12,
-        p9: 3,
-        p10: 2,
-        p11: 10,
-        p12: 5,
-        p5: 6,
+        p4: 50,
+        p2: 60,
+        p6: 30,
+        p3: 40,
+        p1: 45,
+        p7: 20,
+        p8: 35,
+        p9: 15,
+        p10: 10,
+        p11: 25,
+        p12: 15,
+        p5: 20,
       },
     },
     session: null,

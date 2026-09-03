@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/
 import { useEffect } from "react";
 import { AppShell, fieldNav } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
+import { useLang } from "@/lib/i18n";
 import { Pill } from "@/components/kit";
 
 export const Route = createFileRoute("/field")({
@@ -9,16 +10,9 @@ export const Route = createFileRoute("/field")({
   component: FieldLayout,
 });
 
-const titles: Record<string, { t: string; s: string }> = {
-  "/field": { t: "My Day", s: "Attendance, stock & targets" },
-  "/field/visits": { t: "My Route", s: "Shops to visit today" },
-  "/field/sales": { t: "New Sale", s: "Bill a shop" },
-  "/field/stock": { t: "My Stock", s: "Loaded, sold & in hand" },
-  "/field/more": { t: "More", s: "Returns, payments & settings" },
-};
-
 function FieldLayout() {
   const { state } = useStore();
+  const { t } = useLang();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -26,8 +20,16 @@ function FieldLayout() {
     if (!state.session) navigate({ to: "/" });
   }, [state.session, navigate]);
 
+  const titles: Record<string, { t: string; s: string }> = {
+    "/field": { t: t.myDayTitle, s: t.myDaySubtitle },
+    "/field/visits": { t: t.myRouteTitle, s: t.myRouteSubtitle },
+    "/field/sales": { t: t.newSaleTitle, s: t.newSaleSubtitle },
+    "/field/stock": { t: t.myStockTitle, s: t.myStockSubtitle },
+    "/field/more": { t: t.moreTitle, s: t.moreSubtitle },
+  };
+
   const me = state.salesmen.find((s) => s.id === state.session?.salesmanId);
-  const meta = titles[pathname] ?? { t: "Field", s: "" };
+  const meta = titles[pathname] ?? { t: t.myDayTitle, s: "" };
 
   return (
     <AppShell

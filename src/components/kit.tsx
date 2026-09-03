@@ -341,16 +341,19 @@ export function Row({
   left,
   right,
   strong,
+  className,
 }: {
   left: ReactNode;
   right: ReactNode;
   strong?: boolean;
+  className?: string;
 }) {
   return (
     <div
       className={cn(
         "flex items-center justify-between py-1.5 text-sm",
         strong && "border-t border-border pt-2 text-base font-bold text-foreground",
+        className,
       )}
     >
       <span className={cn(!strong && "text-muted-foreground")}>{left}</span>

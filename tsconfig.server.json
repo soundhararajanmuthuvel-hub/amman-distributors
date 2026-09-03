@@ -1,0 +1,19 @@
+{
+  "include": ["server/**/*.ts", "src/server/**/*.ts", "src/db/**/*.ts", "scripts/**/*.ts"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "./dist",
+    "rootDir": "./",
+    "noEmit": false,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

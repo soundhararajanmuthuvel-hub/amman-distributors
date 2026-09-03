@@ -1,7 +1,32 @@
 import { createServerFn } from "@tanstack/react-start";
+import {
+  users,
+  products,
+  suppliers,
+  supplierProductPrices,
+  customers,
+  customerProductPrices,
+  purchaseInvoices,
+  purchaseInvoiceItems,
+  allocations,
+  allocationItems,
+  stockMovements,
+  salesmanStock,
+  attendance,
+  routes,
+  routeCustomers,
+  sales,
+  saleItems,
+  returns,
+  paymentDenominations,
+  dailyClosings,
+  cashTransactions,
+  customerPurchaseTrends,
+  notifications,
+  auditLogs,
+} from "../db/schema";
 import { db } from "../db";
-import { users, products, customers, customerProductPrices } from "../db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 /**
  * Shared services layer representing database actions
@@ -14,7 +39,13 @@ export const getUsersService = async () => {
   return await db.select().from(users);
 };
 
-export const createUserService = async (id: string, name: string, phone: string, email: string | null, role: "admin" | "supervisor" | "salesman") => {
+export const createUserService = async (
+  id: string,
+  name: string,
+  phone: string,
+  email: string | null,
+  role: "admin" | "supervisor" | "salesman"
+) => {
   if (!db) return;
   await db.insert(users).values({ id, name, phone, email, role, active: true });
 };
@@ -22,17 +53,37 @@ export const createUserService = async (id: string, name: string, phone: string,
 // --- 2. Products Actions ---
 export const getProductsService = async () => {
   if (!db) return [];
-  return await db.select().from(products);
+  const list = await db.select().from(products);
+  return list.map((p) => ({
+    id: p.id,
+    name: p.name,
+    sku: p.sku || "",
+    category: p.category,
+    packSize: p.packSize,
+    unit: p.unit,
+    mrp: Number(p.mrp),
+    rate: Number(p.rate),
+    currentPurchasePrice: Number(p.currentPurchasePrice),
+    gstPercent: Number(p.gstPercent),
+    minStock: p.minStock,
+    supplierId: p.supplierId || undefined,
+    active: p.active,
+  }));
 };
 
 export const upsertProductService = async (p: {
   id: string;
   name: string;
+  sku?: string;
   category: string;
   packSize: string;
   unit: string;
   mrp: number;
   rate: number;
+  currentPurchasePrice?: number;
+  gstPercent?: number;
+  minStock?: number;
+  supplierId?: string;
   active: boolean;
 }) => {
   if (!db) return;
@@ -40,25 +91,247 @@ export const upsertProductService = async (p: {
   if (existing.length > 0) {
     await db.update(products).set({
       name: p.name,
+      sku: p.sku || "",
       category: p.category,
       packSize: p.packSize,
       unit: p.unit,
       mrp: String(p.mrp),
       rate: String(p.rate),
+      currentPurchasePrice: String(p.currentPurchasePrice ?? 0),
+      gstPercent: String(p.gstPercent ?? 0),
+      minStock: p.minStock ?? 10,
+      supplierId: p.supplierId || null,
       active: p.active,
     }).where(eq(products.id, p.id));
   } else {
     await db.insert(products).values({
       id: p.id,
       name: p.name,
+      sku: p.sku || "",
       category: p.category,
       packSize: p.packSize,
       unit: p.unit,
       mrp: String(p.mrp),
       rate: String(p.rate),
+      currentPurchasePrice: String(p.currentPurchasePrice ?? 0),
+      gstPercent: String(p.gstPercent ?? 0),
+      minStock: p.minStock ?? 10,
+      supplierId: p.supplierId || null,
       active: p.active,
     });
   }
+};
+
+// --- 2b. Suppliers Actions ---
+export const getSuppliersService = async () => {
+  if (!db) return [];
+  const list = await db.select().from(suppliers);
+  return list.map((s) => ({
+    id: s.id,
+    name: s.name,
+    code: s.code,
+    phone: s.phone,
+    altPhone: s.altPhone || undefined,
+    address: s.address || undefined,
+    gstin: s.gstin || undefined,
+    paymentTerms: s.paymentTerms || "Immediate",
+    openingBalance: Number(s.openingBalance),
+    currentPayable: Number(s.currentPayable),
+    active: s.active,
+  }));
+};
+
+export const upsertSupplierService = async (s: {
+  id: string;
+  name: string;
+  code: string;
+  phone: string;
+  altPhone?: string;
+  address?: string;
+  gstin?: string;
+  paymentTerms?: string;
+  openingBalance?: number;
+  currentPayable?: number;
+  active: boolean;
+}) => {
+  if (!db) return;
+  const existing = await db.select().from(suppliers).where(eq(suppliers.id, s.id)).limit(1);
+  if (existing.length > 0) {
+    await db.update(suppliers).set({
+      name: s.name,
+      code: s.code,
+      phone: s.phone,
+      altPhone: s.altPhone || null,
+      address: s.address || null,
+      gstin: s.gstin || null,
+      paymentTerms: s.paymentTerms || "Immediate",
+      openingBalance: String(s.openingBalance ?? 0),
+      currentPayable: String(s.currentPayable ?? 0),
+      active: s.active,
+    }).where(eq(suppliers.id, s.id));
+  } else {
+    await db.insert(suppliers).values({
+      id: s.id,
+      name: s.name,
+      code: s.code,
+      phone: s.phone,
+      altPhone: s.altPhone || null,
+      address: s.address || null,
+      gstin: s.gstin || null,
+      paymentTerms: s.paymentTerms || "Immediate",
+      openingBalance: String(s.openingBalance ?? 0),
+      currentPayable: String(s.currentPayable ?? (s.openingBalance ?? 0)),
+      active: s.active,
+    });
+  }
+};
+
+// --- 2c. Supplier Product Prices / Purchase Price History Actions ---
+export const getSupplierProductPricesService = async (supplierId?: string, productId?: string) => {
+  if (!db) return [];
+  let query = db.select().from(supplierProductPrices);
+  if (supplierId && productId) {
+    query = db
+      .select()
+      .from(supplierProductPrices)
+      .where(and(eq(supplierProductPrices.supplierId, supplierId), eq(supplierProductPrices.productId, productId)))
+      .orderBy(desc(supplierProductPrices.createdAt)) as any;
+  } else if (supplierId) {
+    query = db
+      .select()
+      .from(supplierProductPrices)
+      .where(eq(supplierProductPrices.supplierId, supplierId))
+      .orderBy(desc(supplierProductPrices.createdAt)) as any;
+  } else if (productId) {
+    query = db
+      .select()
+      .from(supplierProductPrices)
+      .where(eq(supplierProductPrices.productId, productId))
+      .orderBy(desc(supplierProductPrices.createdAt)) as any;
+  }
+  const rows = await query;
+  return rows.map((r) => ({
+    id: r.id,
+    supplierId: r.supplierId,
+    productId: r.productId,
+    purchasePrice: Number(r.purchasePrice),
+    previousPrice: Number(r.previousPrice),
+    diffAmount: Number(r.diffAmount),
+    percentageChange: Number(r.percentageChange),
+    invoiceId: r.invoiceId || undefined,
+    changedBy: r.changedBy || undefined,
+    effectiveDate: String(r.effectiveDate),
+    createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : undefined,
+  }));
+};
+
+// Get the latest confirmed purchase price for Supplier + Product
+export const getLatestSupplierProductPriceService = async (supplierId: string, productId: string) => {
+  if (!db) return 0;
+  const latest = await db
+    .select()
+    .from(supplierProductPrices)
+    .where(and(eq(supplierProductPrices.supplierId, supplierId), eq(supplierProductPrices.productId, productId)))
+    .orderBy(desc(supplierProductPrices.createdAt))
+    .limit(1);
+
+  if (latest.length > 0 && latest[0]) {
+    return Number(latest[0].purchasePrice);
+  }
+  // Fallback to product default currentPurchasePrice
+  const p = await db.select().from(products).where(eq(products.id, productId)).limit(1);
+  return p[0] ? Number(p[0].currentPurchasePrice) : 0;
+};
+
+// --- 2d. Cash Transactions / Cash Flow Actions ---
+export const getCashTransactionsService = async () => {
+  if (!db) return [];
+  const rows = await db.select().from(cashTransactions).orderBy(desc(cashTransactions.createdAt));
+  return rows.map((r) => ({
+    id: r.id,
+    date: String(r.date),
+    time: r.time,
+    type: r.type,
+    amount: Number(r.amount),
+    mode: r.mode,
+    referenceId: r.referenceId || undefined,
+    partyName: r.partyName || undefined,
+    description: r.description || undefined,
+    userId: r.userId || undefined,
+  }));
+};
+
+export const recordCashTransactionService = async (t: {
+  date: string;
+  time: string;
+  type: "CUSTOMER_COLLECTION" | "SUPPLIER_PAYMENT" | "EXPENSE" | "OTHER_INFLOW" | "OPENING_BALANCE";
+  amount: number;
+  mode: "cash" | "upi" | "bank" | "other";
+  referenceId?: string;
+  partyName?: string;
+  description?: string;
+  userId?: string;
+}) => {
+  if (!db) return;
+  const id = `ctx_${Date.now()}`;
+  await db.insert(cashTransactions).values({
+    id,
+    date: new Date(t.date),
+    time: t.time,
+    type: t.type,
+    amount: String(t.amount),
+    mode: t.mode,
+    referenceId: t.referenceId || null,
+    partyName: t.partyName || null,
+    description: t.description || null,
+    userId: t.userId || null,
+  });
+};
+
+export const recordSupplierPaymentService = async (
+  userId: string,
+  payment: {
+    supplierId: string;
+    amount: number;
+    mode: "cash" | "upi" | "bank" | "other";
+    date: string;
+    description?: string;
+  }
+) => {
+  if (!db) return;
+  await db.transaction(async (tx) => {
+    // Deduct payable from supplier
+    const sup = await tx.select().from(suppliers).where(eq(suppliers.id, payment.supplierId)).limit(1);
+    if (sup.length > 0 && sup[0]) {
+      const newPayable = Math.max(0, Number(sup[0].currentPayable) - payment.amount);
+      await tx.update(suppliers).set({ currentPayable: String(newPayable) }).where(eq(suppliers.id, payment.supplierId));
+    }
+
+    // Insert Cash Transaction
+    const txId = `ctx_sup_${Date.now()}`;
+    await tx.insert(cashTransactions).values({
+      id: txId,
+      date: new Date(payment.date),
+      time: new Date().toTimeString().slice(0, 5),
+      type: "SUPPLIER_PAYMENT",
+      amount: String(payment.amount),
+      mode: payment.mode,
+      referenceId: payment.supplierId,
+      partyName: sup[0]?.name || "Supplier",
+      description: payment.description || `Supplier payment to ${sup[0]?.name || "supplier"}`,
+      userId,
+    });
+
+    // Audit Log
+    await tx.insert(auditLogs).values({
+      id: `aud_${txId}`,
+      userId,
+      action: "SUPPLIER_PAYMENT_MADE",
+      entity: "suppliers",
+      entityId: payment.supplierId,
+      newData: payment,
+    });
+  });
 };
 
 // --- 3. Customers Actions ---
@@ -185,7 +458,7 @@ export const updateCustomerProductPriceService = async (
     .where(and(eq(customerProductPrices.customerId, customerId), eq(customerProductPrices.productId, productId)))
     .limit(1);
 
-  const oldPrice = existing.length > 0 ? Number(existing[0].sellingPrice) : 0;
+  const oldPrice = existing.length > 0 && existing[0] ? Number(existing[0].sellingPrice) : 0;
 
   if (existing.length > 0) {
     await db
@@ -207,7 +480,7 @@ export const updateCustomerProductPriceService = async (
 // --- 5. Purchases & Main Stock Ledger Actions ---
 export const getPurchasesService = async () => {
   if (!db) return [];
-  const invoices = await db.select().from(purchaseInvoices);
+  const invoices = await db.select().from(purchaseInvoices).orderBy(desc(purchaseInvoices.createdAt));
   const items = await db.select().from(purchaseInvoiceItems);
 
   return invoices.map((inv) => {
@@ -218,17 +491,24 @@ export const getPurchasesService = async () => {
         billQty: it.billQty,
         verifiedQty: it.verifiedQty,
         rate: Number(it.rate),
+        mrp: Number(it.mrp),
+        gstPercent: Number(it.gstPercent),
       }));
     return {
       id: inv.id,
-      date: inv.date,
+      date: String(inv.date),
+      supplierId: inv.supplierId || undefined,
       supplier: inv.supplier,
       billNo: inv.billNo,
       items: invItems,
       total: Number(inv.total),
-      billPhoto: inv.billPhoto,
-      verifiedBy: inv.verifiedBy,
-      verifiedAt: inv.verifiedAt,
+      paidAmount: Number(inv.paidAmount),
+      pendingAmount: Number(inv.pendingAmount),
+      paymentStatus: inv.paymentStatus,
+      paymentMode: inv.paymentMode || "cash",
+      billPhoto: inv.billPhoto || undefined,
+      verifiedBy: inv.verifiedBy || undefined,
+      verifiedAt: inv.verifiedAt ? new Date(inv.verifiedAt).toISOString() : undefined,
     };
   });
 };
@@ -237,20 +517,28 @@ export const addPurchaseService = async (
   userId: string,
   pu: {
     date: string;
+    supplierId?: string;
     supplier: string;
     billNo: string;
-    items: { productId: string; billQty: number; verifiedQty: number; rate: number }[];
+    items: { productId: string; billQty: number; verifiedQty: number; rate: number; mrp?: number; gstPercent?: number }[];
     total: number;
+    paidAmount?: number;
+    paymentMode?: "cash" | "upi" | "bank" | "other";
     billPhoto?: string;
     clientTransactionId?: string;
   }
 ) => {
   if (!db) return;
   const purchaseId = `pur_${Date.now()}`;
+  const paidAmount = Number(pu.paidAmount ?? 0);
+  const pendingAmount = Math.max(0, pu.total - paidAmount);
+  const paymentStatus: "paid" | "partial" | "pending" =
+    paidAmount >= pu.total ? "paid" : paidAmount > 0 ? "partial" : "pending";
+  const paymentMode = pu.paymentMode || "cash";
 
-  // Execute purchase entry and stock movement atomically inside a MySQL Transaction
+  // Execute purchase entry, price comparison, stock movement, supplier balance and cash flow inside a single atomic MySQL Transaction
   await db.transaction(async (tx) => {
-    // Idempotency check
+    // 1. Idempotency check
     if (pu.clientTransactionId) {
       const existing = await tx
         .select()
@@ -262,29 +550,103 @@ export const addPurchaseService = async (
       }
     }
 
+    // 2. Resolve or find supplier
+    let supplierId = pu.supplierId;
+    if (!supplierId) {
+      const supMatch = await tx.select().from(suppliers).where(eq(suppliers.name, pu.supplier)).limit(1);
+      if (supMatch.length > 0 && supMatch[0]) {
+        supplierId = supMatch[0].id;
+      } else {
+        supplierId = `sup_${Date.now()}`;
+        await tx.insert(suppliers).values({
+          id: supplierId,
+          name: pu.supplier,
+          code: `SUP-${pu.supplier.slice(0, 3).toUpperCase()}`,
+          phone: "98400 00000",
+          openingBalance: "0.00",
+          currentPayable: "0.00",
+          active: true,
+        });
+      }
+    }
+
+    // 3. Insert Purchase Invoice
     await tx.insert(purchaseInvoices).values({
       id: purchaseId,
-      date: pu.date,
+      date: new Date(pu.date),
+      supplierId,
       supplier: pu.supplier,
       billNo: pu.billNo,
       total: String(pu.total),
+      paidAmount: String(paidAmount),
+      pendingAmount: String(pendingAmount),
+      paymentStatus,
+      paymentMode,
       billPhoto: pu.billPhoto || null,
       verifiedBy: userId,
       verifiedAt: new Date(),
       clientTransactionId: pu.clientTransactionId || null,
     });
 
+    // 4. Process each purchase item
     for (const it of pu.items) {
+      const billRate = Number(it.rate);
+
+      // 4a. Insert invoice item
       await tx.insert(purchaseInvoiceItems).values({
         id: `pui_${purchaseId}_${it.productId}`,
         purchaseId,
         productId: it.productId,
         billQty: it.billQty,
         verifiedQty: it.verifiedQty,
-        rate: String(it.rate),
+        rate: String(billRate),
+        mrp: String(it.mrp ?? 0),
+        gstPercent: String(it.gstPercent ?? 0),
       });
 
-      // Log positive main stock movement using the final verified quantity
+      // 4b. Fetch previous confirmed purchase price for (supplierId, productId)
+      const prevPriceRow = await tx
+        .select()
+        .from(supplierProductPrices)
+        .where(and(eq(supplierProductPrices.supplierId, supplierId!), eq(supplierProductPrices.productId, it.productId)))
+        .orderBy(desc(supplierProductPrices.createdAt))
+        .limit(1);
+
+      let prevPrice = 0;
+      if (prevPriceRow.length > 0 && prevPriceRow[0]) {
+        prevPrice = Number(prevPriceRow[0].purchasePrice);
+      } else {
+        const prd = await tx.select().from(products).where(eq(products.id, it.productId)).limit(1);
+        prevPrice = prd[0] ? Number(prd[0].currentPurchasePrice) : 0;
+      }
+
+      const diffAmount = billRate - prevPrice;
+      const percentageChange = prevPrice > 0 ? ((billRate - prevPrice) / prevPrice) * 100 : 0;
+
+      // 4c. Insert into Supplier Product Price / Price History Ledger
+      await tx.insert(supplierProductPrices).values({
+        id: `spp_${purchaseId}_${it.productId}`,
+        supplierId: supplierId!,
+        productId: it.productId,
+        purchasePrice: String(billRate),
+        previousPrice: String(prevPrice),
+        diffAmount: String(diffAmount),
+        percentageChange: String(percentageChange),
+        invoiceId: purchaseId,
+        changedBy: userId,
+        effectiveDate: new Date(pu.date),
+      });
+
+      // 4d. Update Product Master currentPurchasePrice & primary supplier
+      await tx
+        .update(products)
+        .set({
+          currentPurchasePrice: String(billRate),
+          supplierId,
+        })
+        .where(eq(products.id, it.productId));
+
+      // 4e. Log positive stock movement into godown ledger
       await tx.insert(stockMovements).values({
         id: `stk_${purchaseId}_${it.productId}`,
         productId: it.productId,
@@ -297,56 +659,92 @@ export const addPurchaseService = async (
       });
     }
 
-    // Log the audit event
+    // 5. Update Supplier Payable (adds pending amount to outstanding)
+    if (pendingAmount > 0 && supplierId) {
+      const supRow = await tx.select().from(suppliers).where(eq(suppliers.id, supplierId)).limit(1);
+      if (supRow.length > 0 && supRow[0]) {
+        const updatedPayable = Number(supRow[0].currentPayable) + pendingAmount;
+        await tx
+          .update(suppliers)
+          .set({ currentPayable: String(updatedPayable) })
+          .where(eq(suppliers.id, supplierId));
+      }
+    }
+
+    // 6. Record Cash Outflow ONLY for actual amount paid
+    if (paidAmount > 0) {
+      const txId = `ctx_pur_${purchaseId}`;
+      await tx.insert(cashTransactions).values({
+        id: txId,
+        date: new Date(pu.date),
+        time: new Date().toTimeString().slice(0, 5),
+        type: "SUPPLIER_PAYMENT",
+        amount: String(paidAmount),
+        mode: paymentMode,
+        referenceId: purchaseId,
+        partyName: pu.supplier,
+        description: `Payment for Purchase Bill ${pu.billNo}`,
+        userId,
+      });
+    }
+
+    // 7. Log Audit Event
     await tx.insert(auditLogs).values({
       id: `aud_${purchaseId}`,
       userId,
-      action: "PURCHASE_CREATED",
+      action: "PURCHASE_CONFIRMED",
       entity: "purchase_invoices",
       entityId: purchaseId,
-      newData: pu,
+      newData: {
+        ...pu,
+        paidAmount,
+        pendingAmount,
+        paymentStatus,
+      },
     });
   });
 };
 
 // --- TanStack Server Functions Wrapper ---
-export const getUsers = createServerFn("GET", async () => {
+export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
   return await getUsersService();
 });
 
-export const getProducts = createServerFn("GET", async () => {
+export const getProducts = createServerFn({ method: "GET" }).handler(async () => {
   return await getProductsService();
 });
 
-export const getCustomers = createServerFn("GET", async () => {
+export const getCustomers = createServerFn({ method: "GET" }).handler(async () => {
   return await getCustomersService();
 });
 
-export const getPurchases = createServerFn("GET", async () => {
+export const getPurchases = createServerFn({ method: "GET" }).handler(async () => {
   return await getPurchasesService();
 });
 
-export const upsertProduct = createServerFn("POST", async (p: Parameters<typeof upsertProductService>[0]) => {
-  return await upsertProductService(p);
-});
+export const upsertProduct = createServerFn({ method: "POST" })
+  .validator((d: Parameters<typeof upsertProductService>[0]) => d)
+  .handler(async ({ data: p }) => {
+    return await upsertProductService(p);
+  });
 
-export const upsertCustomer = createServerFn("POST", async (c: Parameters<typeof upsertCustomerService>[0]) => {
-  return await upsertCustomerService(c);
-});
+export const upsertCustomer = createServerFn({ method: "POST" })
+  .validator((d: Parameters<typeof upsertCustomerService>[0]) => d)
+  .handler(async ({ data: c }) => {
+    return await upsertCustomerService(c);
+  });
 
-export const addPurchase = createServerFn(
-  "POST",
-  async (payload: { userId: string; purchase: Parameters<typeof addPurchaseService>[1] }) => {
+export const addPurchase = createServerFn({ method: "POST" })
+  .validator((d: { userId: string; purchase: Parameters<typeof addPurchaseService>[1] }) => d)
+  .handler(async ({ data: payload }) => {
     return await addPurchaseService(payload.userId, payload.purchase);
-  }
-);
+  });
 
-export const updateCustomerProductPrice = createServerFn(
-  "POST",
-  async (payload: { userId: string; customerId: string; productId: string; price: number }) => {
+export const updateCustomerProductPrice = createServerFn({ method: "POST" })
+  .validator((d: { userId: string; customerId: string; productId: string; price: number }) => d)
+  .handler(async ({ data: payload }) => {
     return await updateCustomerProductPriceService(payload.userId, payload.customerId, payload.productId, payload.price);
-  }
-);
+  });
 
 // --- 6. Salesman Stock & Allocations ---
 export const getAllocationsService = async () => {
@@ -389,7 +787,7 @@ export const allocateStockService = async (
     // 1. Insert allocation record
     await tx.insert(allocations).values({
       id: allocationId,
-      date: al.date,
+      date: new Date(al.date),
       salesmanId: al.salesmanId,
     });
 
@@ -445,7 +843,7 @@ export const allocateStockService = async (
         .where(and(eq(salesmanStock.salesmanId, al.salesmanId), eq(salesmanStock.productId, it.productId)))
         .limit(1);
 
-      if (current.length > 0) {
+      if (current.length > 0 && current[0]) {
         await tx
           .update(salesmanStock)
           .set({ quantity: current[0].quantity + it.qty })
@@ -483,14 +881,14 @@ export const markAttendanceService = async (userId: string, date: string, checkI
   const existing = await db
     .select()
     .from(attendance)
-    .where(and(eq(attendance.userId, userId), eq(attendance.date, date)))
+    .where(and(eq(attendance.userId, userId), eq(attendance.date, new Date(date))))
     .limit(1);
 
   if (existing.length === 0) {
     await db.insert(attendance).values({
       id: `att_${userId}_${date}`,
       userId,
-      date,
+      date: new Date(date),
       checkIn: checkInTime,
       status: "present",
     });
@@ -502,14 +900,18 @@ export const closeDayService = async (userId: string, date: string, checkOutTime
   const existing = await db
     .select()
     .from(attendance)
-    .where(and(eq(attendance.userId, userId), eq(attendance.date, date)))
+    .where(and(eq(attendance.userId, userId), eq(attendance.date, new Date(date))))
     .limit(1);
 
   let duration = "";
-  if (existing.length > 0) {
+  if (existing.length > 0 && existing[0]) {
     const start = existing[0].checkIn;
-    const [startH, startM] = start.split(":").map(Number);
-    const [endH, endM] = checkOutTime.split(":").map(Number);
+    const startSplit = (start || "").split(":");
+    const startH = Number(startSplit[0] || 0);
+    const startM = Number(startSplit[1] || 0);
+    const endSplit = (checkOutTime || "").split(":");
+    const endH = Number(endSplit[0] || 0);
+    const endM = Number(endSplit[1] || 0);
     const diffMinutes = (endH * 60 + endM) - (startH * 60 + startM);
     if (diffMinutes >= 0) {
       const h = Math.floor(diffMinutes / 60);
@@ -521,17 +923,8 @@ export const closeDayService = async (userId: string, date: string, checkOutTime
   await db
     .update(attendance)
     .set({ status: "closed", closedAt: checkOutTime, workingDuration: duration })
-    .where(and(eq(attendance.userId, userId), eq(attendance.date, date)));
+    .where(and(eq(attendance.userId, userId), eq(attendance.date, new Date(date))));
 };
-};
-
-// --- TanStack Server Functions Wrapper ---
-export const closeDay = createServerFn(
-  "POST",
-  async (payload: { salesmanId: string; date: string; checkOutTime: string }) => {
-    return await closeDayService(payload.salesmanId, payload.date, payload.checkOutTime);
-  }
-);
 
 // --- 8. Sales Actions ---
 export const getSalesService = async () => {
@@ -636,7 +1029,7 @@ export const recordSaleService = async (
     // 5. Insert Sale Record
     await tx.insert(sales).values({
       id: saleId,
-      date: sl.date,
+      date: new Date(sl.date),
       time: sl.time,
       customerId: sl.customerId,
       salesmanId: sl.salesmanId,
@@ -664,10 +1057,12 @@ export const recordSaleService = async (
         .where(and(eq(salesmanStock.salesmanId, sl.salesmanId), eq(salesmanStock.productId, it.productId)))
         .limit(1);
 
-      await tx
-        .update(salesmanStock)
-        .set({ quantity: smStock[0].quantity - it.qty })
-        .where(and(eq(salesmanStock.salesmanId, sl.salesmanId), eq(salesmanStock.productId, it.productId)));
+      if (smStock.length > 0 && smStock[0]) {
+        await tx
+          .update(salesmanStock)
+          .set({ quantity: smStock[0].quantity - it.qty })
+          .where(and(eq(salesmanStock.salesmanId, sl.salesmanId), eq(salesmanStock.productId, it.productId)));
+      }
 
       // Write ledger stock movement
       await tx.insert(stockMovements).values({
@@ -782,7 +1177,7 @@ export const addReturnService = async (
     // Insert Return Record
     await tx.insert(returns).values({
       id: returnId,
-      date: r.date,
+      date: new Date(r.date),
       salesmanId: r.salesmanId,
       customerId: r.customerId || null,
       productId: r.productId,
@@ -831,17 +1226,17 @@ export const getCustomerDashboardService = async (customerId: string) => {
   customerSales.forEach((sl) => {
     unpaid += Number(sl.total) - Number(sl.received);
   });
-  const outstanding = Number(profile[0].openingOutstanding) + unpaid;
+  const outstanding = profile[0] ? Number(profile[0].openingOutstanding) + unpaid : unpaid;
 
   // Compute Totals
   const totalSalesVal = customerSales.reduce((a, b) => a + Number(b.total), 0);
   const todayStrDate = new Date().toISOString().slice(0, 10);
   const todaySalesVal = customerSales
-    .filter((x) => x.date === todayStrDate)
+    .filter((x) => new Date(x.date).toISOString().slice(0, 10) === todayStrDate)
     .reduce((a, b) => a + Number(b.total), 0);
 
   return {
-    profile: profile[0],
+    profile: profile[0] || undefined,
     financialSummary: {
       totalSales: totalSalesVal,
       todaySales: todaySalesVal,
@@ -853,56 +1248,53 @@ export const getCustomerDashboardService = async (customerId: string) => {
 };
 
 // --- TanStack Server Functions Wrapper ---
-export const getSales = createServerFn("GET", async () => {
+export const getSales = createServerFn({ method: "GET" }).handler(async () => {
   return await getSalesService();
 });
 
-export const getReturns = createServerFn("GET", async () => {
+export const getReturns = createServerFn({ method: "GET" }).handler(async () => {
   return await getReturnsService();
 });
 
-export const recordSale = createServerFn(
-  "POST",
-  async (payload: { userId: string; sale: Parameters<typeof recordSaleService>[1] }) => {
+export const recordSale = createServerFn({ method: "POST" })
+  .validator((d: { userId: string; sale: Parameters<typeof recordSaleService>[1] }) => d)
+  .handler(async ({ data: payload }) => {
     return await recordSaleService(payload.userId, payload.sale);
-  }
-);
+  });
 
-export const addReturn = createServerFn(
-  "POST",
-  async (payload: { userId: string; return: Parameters<typeof addReturnService>[1] }) => {
+export const addReturn = createServerFn({ method: "POST" })
+  .validator((d: { userId: string; return: Parameters<typeof addReturnService>[1] }) => d)
+  .handler(async ({ data: payload }) => {
     return await addReturnService(payload.userId, payload.return);
-  }
-);
+  });
 
-export const getCustomerDashboard = createServerFn("POST", async (customerId: string) => {
-  return await getCustomerDashboardService(customerId);
-});
+export const getCustomerDashboard = createServerFn({ method: "POST" })
+  .validator((d: string) => d)
+  .handler(async ({ data: customerId }) => {
+    return await getCustomerDashboardService(customerId);
+  });
 
 
-export const getAttendance = createServerFn("GET", async () => {
+export const getAttendance = createServerFn({ method: "GET" }).handler(async () => {
   return await getAttendanceService();
 });
 
-export const allocateStock = createServerFn(
-  "POST",
-  async (payload: { userId: string; allocation: Parameters<typeof allocateStockService>[1] }) => {
+export const allocateStock = createServerFn({ method: "POST" })
+  .validator((d: { userId: string; allocation: Parameters<typeof allocateStockService>[1] }) => d)
+  .handler(async ({ data: payload }) => {
     return await allocateStockService(payload.userId, payload.allocation);
-  }
-);
+  });
 
-export const markAttendance = createServerFn(
-  "POST",
-  async (payload: { userId: string; date: string; checkInTime: string }) => {
+export const markAttendance = createServerFn({ method: "POST" })
+  .validator((d: { userId: string; date: string; checkInTime: string }) => d)
+  .handler(async ({ data: payload }) => {
     return await markAttendanceService(payload.userId, payload.date, payload.checkInTime);
-  }
-);
+  });
 
-export const closeDay = createServerFn(
-  "POST",
-  async (payload: { userId: string; date: string; checkOutTime: string }) => {
+export const closeDay = createServerFn({ method: "POST" })
+  .validator((d: { userId: string; date: string; checkOutTime: string }) => d)
+  .handler(async ({ data: payload }) => {
     return await closeDayService(payload.userId, payload.date, payload.checkOutTime);
-  }
-);
+  });
 
 

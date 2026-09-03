@@ -13,29 +13,32 @@ import {
   TruckIcon,
 } from "lucide-react";
 import { useStore, todayTotals, salesmanSummary, dropAlerts, money, sumMap } from "@/lib/store";
+import { useLang } from "@/lib/i18n";
 import { Card, SectionTitle, Stat, Pill, Btn, StatusPill } from "@/components/kit";
 
 export const Route = createFileRoute("/admin/")({ component: AdminHome });
 
 function AdminHome() {
   const { state, set } = useStore();
+  const { t: tr, lang } = useLang();
   const t = todayTotals(state);
   const alerts = dropAlerts(state);
 
   const adminAttendance = state.attendance.find(
-    (a) => a.userId === "admin" && a.date === state.today,
+    (a) => (a.userId === "admin" || a.salesmanId === "admin") && a.date === state.today,
   );
 
   const punchIn = () => {
     const time = new Date().toTimeString().slice(0, 5);
     set((s) => {
-      if (s.attendance.some((a) => a.userId === "admin" && a.date === s.today)) return s;
+      if (s.attendance.some((a) => (a.userId === "admin" || a.salesmanId === "admin") && a.date === s.today)) return s;
       return {
         ...s,
         attendance: [
           ...s.attendance,
           {
             id: `att_admin_${s.today}`,
+            salesmanId: "admin",
             userId: "admin",
             date: s.today,
             checkIn: time,
@@ -49,11 +52,15 @@ function AdminHome() {
   const punchOut = () => {
     const time = new Date().toTimeString().slice(0, 5);
     set((s) => {
-      const existing = s.attendance.find((a) => a.userId === "admin" && a.date === s.today);
+      const existing = s.attendance.find((a) => (a.userId === "admin" || a.salesmanId === "admin") && a.date === s.today);
       let duration = "";
       if (existing) {
-        const [startH, startM] = existing.checkIn.split(":").map(Number);
-        const [endH, endM] = time.split(":").map(Number);
+        const startSplit = (existing.checkIn || "").split(":");
+        const startH = Number(startSplit[0] || 0);
+        const startM = Number(startSplit[1] || 0);
+        const endSplit = time.split(":");
+        const endH = Number(endSplit[0] || 0);
+        const endM = Number(endSplit[1] || 0);
         const diffMinutes = endH * 60 + endM - (startH * 60 + startM);
         if (diffMinutes >= 0) {
           const h = Math.floor(diffMinutes / 60);
@@ -64,7 +71,7 @@ function AdminHome() {
       return {
         ...s,
         attendance: s.attendance.map((a) =>
-          a.userId === "admin" && a.date === s.today
+          (a.userId === "admin" || a.salesmanId === "admin") && a.date === s.today
             ? { ...a, status: "closed", closedAt: time, workingDuration: duration }
             : a,
         ),
@@ -78,35 +85,34 @@ function AdminHome() {
       <Card className="border-primary/20 bg-primary/5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-bold text-foreground">Manager Self-Attendance</p>
+            <p className="text-sm font-bold text-foreground">{tr.managerSelfAtt}</p>
             <p className="text-xs text-muted-foreground">
-              Log your shift presence for accountability
+              {tr.logShiftPresence}
             </p>
           </div>
           <div className="flex items-center gap-3">
             {!adminAttendance && (
-              <Btn onClick={punchIn} tone="primary">
-                Punch In
+              <Btn onClick={punchIn} variant="primary">
+                {tr.punchIn}
               </Btn>
             )}
             {adminAttendance && adminAttendance.status === "present" && (
               <div className="flex items-center gap-3">
                 <span className="text-xs font-semibold text-success bg-success/15 px-2.5 py-1 rounded-full">
-                  Present · In {adminAttendance.checkIn}
+                  {tr.presentIn} {adminAttendance.checkIn}
                 </span>
                 <Btn onClick={punchOut} variant="outline">
-                  Punch Out
+                  {tr.punchOut}
                 </Btn>
               </div>
             )}
             {adminAttendance && adminAttendance.status === "closed" && (
               <div className="flex flex-col items-end">
                 <span className="text-xs font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                  Attendance Completed
+                  {tr.attendanceCompleted}
                 </span>
                 <span className="text-[10px] text-muted-foreground mt-1">
-                  In: {adminAttendance.checkIn} · Out: {adminAttendance.closedAt} · Duration:{" "}
-                  {adminAttendance.workingDuration}
+                  In: {adminAttendance.checkIn} · Out: {adminAttendance.closedAt} · {adminAttendance.workingDuration}
                 </span>
               </div>
             )}
@@ -114,55 +120,92 @@ function AdminHome() {
         </div>
       </Card>
 
+      {/* Cash Flow & Financial Health Overview */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="border-primary/20 bg-primary/5 p-4">
+          <p className="text-xs uppercase font-bold text-muted-foreground">{tr.currentCashInHand}</p>
+          <p className="mt-1 text-2xl font-black text-foreground">
+            {money(t.collected + 15000 - (state.purchases || []).reduce((acc, p) => acc + (p.paidAmount ?? 0), 0))}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {tr.openingCash}: {money(15000)} · {tr.collections}: +{money(t.collected)}
+          </p>
+        </Card>
+
+        <Card className="border-warning/20 bg-warning/5 p-4">
+          <p className="text-xs uppercase font-bold text-muted-foreground">{tr.totalSupplierDue}</p>
+          <p className="mt-1 text-2xl font-black text-warning">
+            {money((state.suppliers || []).reduce((acc, s) => acc + (s.currentPayable ?? 0), 0))}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {(state.suppliers || []).length} {tr.activeSuppliers}
+          </p>
+        </Card>
+
+        <Card className="border-success/20 bg-success/5 p-4">
+          <p className="text-xs uppercase font-bold text-muted-foreground">{tr.godownStockVal}</p>
+          <p className="mt-1 text-2xl font-black text-success">
+            {money(
+              (state.products || []).reduce((acc, p) => {
+                return acc + (p.currentPurchasePrice ?? p.rate ?? 0) * 15;
+              }, 0)
+            )}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {(state.products || []).length} {tr.catalogLines}
+          </p>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          label="Today's Sales"
+          label={tr.todaysSales}
           value={money(t.salesValue)}
           sub={`${t.billCount} bills`}
           tone="primary"
           icon={<ShoppingCart className="size-4" />}
         />
         <Stat
-          label="Cash Collected"
+          label={tr.cashCollected}
           value={money(t.collected)}
           tone="success"
           icon={<IndianRupee className="size-4" />}
         />
         <Stat
-          label="Pending"
+          label={tr.customerDues}
           value={money(t.pending)}
           tone={t.pending > 0 ? "danger" : "success"}
           icon={<Clock className="size-4" />}
         />
         <Stat
-          label="Total Stock"
+          label={tr.godownStock}
           value={`${t.available} u`}
           sub={`Opening ${t.opening}`}
           tone="info"
           icon={<Boxes className="size-4" />}
         />
         <Stat
-          label="New Stock"
+          label={tr.newStock}
           value={`${t.incoming} u`}
-          sub="Purchased today"
+          sub={tr.purchasedToday}
           tone="info"
           icon={<PackagePlus className="size-4" />}
         />
         <Stat
-          label="Returns"
+          label={tr.returns}
           value={`${t.returns} u`}
           tone="warning"
           icon={<Undo2 className="size-4" />}
         />
         <Stat
-          label="Active Salesmen"
+          label={tr.activeSalesmen}
           value={t.activeSalesmen}
           sub={`of ${state.salesmen.length}`}
           tone="success"
           icon={<Users className="size-4" />}
         />
         <Stat
-          label="Shops Visited"
+          label={tr.shopsVisited}
           value={t.shopsVisited}
           sub={`of ${state.customers.length}`}
           tone="primary"
@@ -173,22 +216,22 @@ function AdminHome() {
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         <Link to="/admin/purchase">
           <Btn variant="soft" className="w-full">
-            Purchase Entry
+            {tr.purchaseEntry}
           </Btn>
         </Link>
         <Link to="/admin/allocate">
           <Btn variant="soft" className="w-full">
-            Allocate Stock
+            {tr.allocateStock}
           </Btn>
         </Link>
         <Link to="/admin/closing">
           <Btn variant="soft" className="w-full">
-            Day Closing
+            {tr.dayClosing}
           </Btn>
         </Link>
         <Link to="/admin/reports">
           <Btn variant="soft" className="w-full">
-            Reports
+            {tr.reportsCashFlow}
           </Btn>
         </Link>
       </div>

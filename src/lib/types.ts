@@ -1,14 +1,71 @@
-export type Role = "admin" | "supervisor" | "salesman";
+export type Role = "superadmin" | "admin" | "supervisor" | "salesman";
+
+export interface User {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string | undefined;
+  role: Role;
+  permissions?: string[] | undefined;
+  active: boolean;
+  createdAt?: string | undefined;
+}
 
 export interface Product {
   id: string;
   name: string;
+  sku?: string | undefined;
   category: string;
   packSize: string;
   unit: string;
   mrp: number;
-  rate: number;
+  rate: number; // Default selling price
+  currentPurchasePrice?: number | undefined;
+  gstPercent?: number | undefined;
+  minStock?: number | undefined;
+  supplierId?: string | undefined;
   active: boolean;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  code: string;
+  phone: string;
+  altPhone?: string | undefined;
+  address?: string | undefined;
+  gstin?: string | undefined;
+  paymentTerms?: string | undefined;
+  openingBalance: number;
+  currentPayable: number;
+  active: boolean;
+}
+
+export interface SupplierProductPrice {
+  id: string;
+  supplierId: string;
+  productId: string;
+  purchasePrice: number;
+  previousPrice: number;
+  diffAmount: number;
+  percentageChange: number;
+  invoiceId?: string | undefined;
+  changedBy?: string | undefined;
+  effectiveDate: string;
+  createdAt?: string | undefined;
+}
+
+export interface CashTransaction {
+  id: string;
+  date: string;
+  time: string;
+  type: "CUSTOMER_COLLECTION" | "SUPPLIER_PAYMENT" | "EXPENSE" | "OTHER_INFLOW" | "OPENING_BALANCE";
+  amount: number;
+  mode: "cash" | "upi" | "bank" | "other";
+  referenceId?: string;
+  partyName?: string;
+  description?: string;
+  userId?: string;
 }
 
 export interface Customer {
@@ -36,10 +93,12 @@ export interface Salesman {
 export interface Attendance {
   id: string;
   salesmanId: string;
+  userId?: string | undefined;
   date: string;
   checkIn: string;
   status: "present" | "closed";
   closedAt?: string | undefined;
+  workingDuration?: string | undefined;
 }
 
 export interface LineItem {
@@ -48,13 +107,30 @@ export interface LineItem {
   rate: number;
 }
 
+export interface PurchaseItem {
+  productId: string;
+  billQty: number;
+  verifiedQty: number;
+  rate: number; // Purchase rate on bill
+  mrp?: number | undefined;
+  gstPercent?: number | undefined;
+}
+
 export interface Purchase {
   id: string;
   date: string;
+  supplierId?: string | undefined;
   supplier: string;
   billNo: string;
-  items: LineItem[];
+  items: PurchaseItem[];
   total: number;
+  paidAmount?: number | undefined;
+  pendingAmount?: number | undefined;
+  paymentStatus?: "paid" | "partial" | "pending" | undefined;
+  paymentMode?: "cash" | "upi" | "bank" | "other" | undefined;
+  billPhoto?: string | undefined;
+  verifiedBy?: string | undefined;
+  verifiedAt?: string | undefined;
 }
 
 export interface Allocation {
@@ -92,7 +168,11 @@ export interface ReturnRec {
 }
 
 export interface AppState {
+  users: User[];
   products: Product[];
+  suppliers: Supplier[];
+  supplierPrices: SupplierProductPrice[];
+  cashTransactions: CashTransaction[];
   customers: Customer[];
   salesmen: Salesman[];
   attendance: Attendance[];

@@ -8,16 +8,16 @@ import type { Role } from "@/lib/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sign in — Amrith Dairy Distribution" },
+      { title: "Sign in — Amman Distributors" },
       {
         name: "description",
         content:
           "Sign in as owner, supervisor or salesman to manage dairy stock, routes, sales, payments and closing stock.",
       },
-      { property: "og:title", content: "Sign in — Amrith Dairy Distribution" },
+      { property: "og:title", content: "Sign in — Amman Distributors" },
       {
         property: "og:description",
-        content: "Role based login for the dairy distribution management system.",
+        content: "Role based login for the Amman Distributors dairy distribution management system.",
       },
     ],
   }),
@@ -64,14 +64,14 @@ function Login() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-primary/10 via-background to-background px-4 py-10">
       <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-card">
-            <Milk className="size-7" />
-          </span>
+        <div className="mb-8 text-center flex flex-col items-center">
+          <div className="flex h-20 w-32 items-center justify-center rounded-2xl bg-white p-2 shadow-card border border-border">
+            <img src="/logo.png" alt="AK Foods Products" className="h-full w-full object-contain" />
+          </div>
           <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-foreground">
-            Amrith Dairy
+            Amman Distributors
           </h1>
-          <p className="text-sm text-muted-foreground">Distribution Management System</p>
+          <p className="text-sm text-muted-foreground">Dairy Distribution Management System</p>
         </div>
 
         <Card className="space-y-3">

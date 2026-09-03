@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, ShoppingCart, Boxes, Undo2 } from "lucide-react";
 import { useStore, salesmanSummary, sumMap, money } from "@/lib/store";
+import { useLang } from "@/lib/i18n";
 import { Card, Stat, Btn, SectionTitle, StatusPill, Empty, useConfirm } from "@/components/kit";
 
 export const Route = createFileRoute("/field/")({ component: FieldHome });
 
 function FieldHome() {
   const { state, markAttendance, closeDay } = useStore();
+  const { t, lang } = useLang();
   const { confirm, confirmNode } = useConfirm();
   const id = state.session?.salesmanId ?? state.salesmen[0]?.id ?? "";
   const sm = state.salesmen.find((s) => s.id === id);
@@ -20,34 +22,34 @@ function FieldHome() {
         <div>
           <p className="font-bold text-foreground">{sm.routeName}</p>
           <p className="text-xs text-muted-foreground">
-            {att ? `Checked in at ${att.checkIn}` : "Not checked in yet"}
+            {att ? `${t.checkedInAt} ${att.checkIn}` : t.notCheckedIn}
           </p>
         </div>
         {att ? (
           <StatusPill status={att.status} />
         ) : (
           <Btn onClick={() => markAttendance(sm.id)}>
-            <CheckCircle2 className="size-4" /> Check in
+            <CheckCircle2 className="size-4" /> {t.checkInBtn}
           </Btn>
         )}
       </Card>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          label="Sales"
+          label={t.salesStat}
           value={money(s.salesValue)}
           sub={`${s.sales.length} bills`}
           tone="primary"
           icon={<ShoppingCart className="size-4" />}
         />
-        <Stat label="Collected" value={money(s.collected)} tone="success" />
+        <Stat label={t.collectedStat} value={money(s.collected)} tone="success" />
         <Stat
-          label="Pending"
+          label={t.pendingStat}
           value={money(s.pending)}
           tone={s.pending > 0 ? "danger" : "success"}
         />
         <Stat
-          label="Stock in hand"
+          label={t.stockInHandStat}
           value={`${sumMap(s.stock.current)} u`}
           tone="info"
           icon={<Boxes className="size-4" />}
@@ -56,28 +58,28 @@ function FieldHome() {
 
       <div className="grid grid-cols-2 gap-2">
         <Link to="/field/sales" search={{ customerId: undefined }}>
-          <Btn className="w-full">New sale</Btn>
+          <Btn className="w-full">{t.newSaleTitle}</Btn>
         </Link>
         <Link to="/field/visits">
           <Btn variant="soft" className="w-full">
-            My route
+            {t.myRouteBtn}
           </Btn>
         </Link>
         <Link to="/field/stock">
           <Btn variant="soft" className="w-full">
-            My stock
+            {t.myStockBtn}
           </Btn>
         </Link>
         <Link to="/field/more">
           <Btn variant="soft" className="w-full">
-            <Undo2 className="size-4" /> Return
+            <Undo2 className="size-4" /> {t.returnBtn}
           </Btn>
         </Link>
       </div>
 
-      <SectionTitle>Recent bills</SectionTitle>
+      <SectionTitle>{t.recentBills}</SectionTitle>
       {s.sales.length === 0 ? (
-        <Empty title="No bills yet" sub="Start your route and record your first sale." />
+        <Empty title={t.noBillsYet} sub={t.startRouteMsg} />
       ) : (
         <Card>
           {s.sales
@@ -105,14 +107,14 @@ function FieldHome() {
         disabled={!att || att.status === "closed"}
         onClick={() =>
           confirm(
-            "Close your day?",
-            `Sales ${money(s.salesValue)} · Collected ${money(s.collected)} · Stock in hand ${sumMap(s.stock.current)} u`,
+            t.closeDayConfirmTitle,
+            `${t.salesStat} ${money(s.salesValue)} · ${t.collectedStat} ${money(s.collected)} · ${t.stockInHandStat} ${sumMap(s.stock.current)} u`,
             () => closeDay(sm.id),
-            "Close day",
+            t.closeMyDayBtn,
           )
         }
       >
-        {att?.status === "closed" ? "Day closed" : "Close my day"}
+        {att?.status === "closed" ? t.dayClosedBadge : t.closeMyDayBtn}
       </Btn>
       {confirmNode}
     </div>

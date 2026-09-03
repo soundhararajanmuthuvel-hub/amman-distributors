@@ -95,7 +95,7 @@ export function SaleFlow({
       "Complete sale?",
       `${shop?.name} · Bill ${money(total)} · Received ${money(applied)}`,
       () => {
-        recordSale({
+        const salePayload: any = {
           date: state.today,
           time: new Date().toTimeString().slice(0, 5),
           customerId: shopId,
@@ -105,8 +105,11 @@ export function SaleFlow({
           received: applied,
           status: applied >= total ? "paid" : applied > 0 ? "partial" : "pending",
           mode,
-          denominations: mode === "cash" && cashCounted > 0 ? { ...notes } : undefined,
-        });
+        };
+        if (mode === "cash" && cashCounted > 0) {
+          salePayload.denominations = { ...notes };
+        }
+        recordSale(salePayload);
         // apply explicit "update default price" overrides
         const cust = state.customers.find((c) => c.id === shopId);
         if (cust) {
@@ -385,7 +388,6 @@ function NewCustomerModal({
       salesmanId,
       prices: {},
       openingOutstanding: 0,
-      notes: note.trim().slice(0, 300) || undefined,
     });
     setName("");
     setOwner("");

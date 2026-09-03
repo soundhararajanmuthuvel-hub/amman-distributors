@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "start:server": "node dist/server/index.js",
+    "db:migrate": "node dist/scripts/migrate-db.js",
     "build:dev": "vite build --mode development",
     "build:android": "vite build && node scripts/generate-index.js && npx cap copy android && npx cap sync android",
     "preview": "vite preview",

@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as FieldRouteImport } from './routes/field'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAllocateRouteImport } from './routes/admin.allocate'
+import { Route as AdminAttendanceRouteImport } from './routes/admin.attendance'
 import { Route as AdminClosingRouteImport } from './routes/admin.closing'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminMoreRouteImport } from './routes/admin.more'
@@ -25,6 +26,8 @@ import { Route as AdminReturnsRouteImport } from './routes/admin.returns'
 import { Route as AdminRoutesRouteImport } from './routes/admin.routes'
 import { Route as AdminSalesRouteImport } from './routes/admin.sales'
 import { Route as AdminStockRouteImport } from './routes/admin.stock'
+import { Route as AdminSuppliersRouteImport } from './routes/admin.suppliers'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as FieldIndexRouteImport } from './routes/field.index'
 import { Route as FieldMoreRouteImport } from './routes/field.more'
 import { Route as FieldSalesRouteImport } from './routes/field.sales'
@@ -56,6 +59,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAllocateRoute = AdminAllocateRouteImport.update({
   id: '/allocate',
   path: '/allocate',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAttendanceRoute = AdminAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminClosingRoute = AdminClosingRouteImport.update({
@@ -113,6 +121,16 @@ const AdminStockRoute = AdminStockRouteImport.update({
   path: '/stock',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSuppliersRoute = AdminSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const FieldIndexRoute = FieldIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -154,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/field': typeof FieldRouteWithChildren
   '/admin/allocate': typeof AdminAllocateRoute
+  '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/closing': typeof AdminClosingRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/more': typeof AdminMoreRoute
@@ -165,6 +184,8 @@ export interface FileRoutesByFullPath {
   '/admin/routes': typeof AdminRoutesRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/stock': typeof AdminStockRoute
+  '/admin/suppliers': typeof AdminSuppliersRoute
+  '/admin/users': typeof AdminUsersRoute
   '/field/more': typeof FieldMoreRoute
   '/field/sales': typeof FieldSalesRoute
   '/field/stock': typeof FieldStockRoute
@@ -177,6 +198,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/allocate': typeof AdminAllocateRoute
+  '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/closing': typeof AdminClosingRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/more': typeof AdminMoreRoute
@@ -188,6 +210,8 @@ export interface FileRoutesByTo {
   '/admin/routes': typeof AdminRoutesRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/stock': typeof AdminStockRoute
+  '/admin/suppliers': typeof AdminSuppliersRoute
+  '/admin/users': typeof AdminUsersRoute
   '/field/more': typeof FieldMoreRoute
   '/field/sales': typeof FieldSalesRoute
   '/field/stock': typeof FieldStockRoute
@@ -203,6 +227,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/field': typeof FieldRouteWithChildren
   '/admin/allocate': typeof AdminAllocateRoute
+  '/admin/attendance': typeof AdminAttendanceRoute
   '/admin/closing': typeof AdminClosingRoute
   '/admin/customers': typeof AdminCustomersRoute
   '/admin/more': typeof AdminMoreRoute
@@ -214,6 +239,8 @@ export interface FileRoutesById {
   '/admin/routes': typeof AdminRoutesRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/stock': typeof AdminStockRoute
+  '/admin/suppliers': typeof AdminSuppliersRoute
+  '/admin/users': typeof AdminUsersRoute
   '/field/more': typeof FieldMoreRoute
   '/field/sales': typeof FieldSalesRoute
   '/field/stock': typeof FieldStockRoute
@@ -230,6 +257,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/field'
     | '/admin/allocate'
+    | '/admin/attendance'
     | '/admin/closing'
     | '/admin/customers'
     | '/admin/more'
@@ -241,6 +269,8 @@ export interface FileRouteTypes {
     | '/admin/routes'
     | '/admin/sales'
     | '/admin/stock'
+    | '/admin/suppliers'
+    | '/admin/users'
     | '/field/more'
     | '/field/sales'
     | '/field/stock'
@@ -253,6 +283,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin/allocate'
+    | '/admin/attendance'
     | '/admin/closing'
     | '/admin/customers'
     | '/admin/more'
@@ -264,6 +295,8 @@ export interface FileRouteTypes {
     | '/admin/routes'
     | '/admin/sales'
     | '/admin/stock'
+    | '/admin/suppliers'
+    | '/admin/users'
     | '/field/more'
     | '/field/sales'
     | '/field/stock'
@@ -278,6 +311,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/field'
     | '/admin/allocate'
+    | '/admin/attendance'
     | '/admin/closing'
     | '/admin/customers'
     | '/admin/more'
@@ -289,6 +323,8 @@ export interface FileRouteTypes {
     | '/admin/routes'
     | '/admin/sales'
     | '/admin/stock'
+    | '/admin/suppliers'
+    | '/admin/users'
     | '/field/more'
     | '/field/sales'
     | '/field/stock'
@@ -340,6 +376,13 @@ declare module '@tanstack/react-router' {
       path: '/allocate'
       fullPath: '/admin/allocate'
       preLoaderRoute: typeof AdminAllocateRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/attendance': {
+      id: '/admin/attendance'
+      path: '/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AdminAttendanceRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/closing': {
@@ -419,6 +462,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStockRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/suppliers': {
+      id: '/admin/suppliers'
+      path: '/suppliers'
+      fullPath: '/admin/suppliers'
+      preLoaderRoute: typeof AdminSuppliersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/field/': {
       id: '/field/'
       path: '/'
@@ -473,6 +530,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAllocateRoute: typeof AdminAllocateRoute
+  AdminAttendanceRoute: typeof AdminAttendanceRoute
   AdminClosingRoute: typeof AdminClosingRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
   AdminMoreRoute: typeof AdminMoreRoute
@@ -484,6 +542,8 @@ interface AdminRouteChildren {
   AdminRoutesRoute: typeof AdminRoutesRoute
   AdminSalesRoute: typeof AdminSalesRoute
   AdminStockRoute: typeof AdminStockRoute
+  AdminSuppliersRoute: typeof AdminSuppliersRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCustomerIdRoute: typeof AdminCustomerIdRoute
   AdminSalesmanIdRoute: typeof AdminSalesmanIdRoute
@@ -491,6 +551,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAllocateRoute: AdminAllocateRoute,
+  AdminAttendanceRoute: AdminAttendanceRoute,
   AdminClosingRoute: AdminClosingRoute,
   AdminCustomersRoute: AdminCustomersRoute,
   AdminMoreRoute: AdminMoreRoute,
@@ -502,6 +563,8 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminRoutesRoute: AdminRoutesRoute,
   AdminSalesRoute: AdminSalesRoute,
   AdminStockRoute: AdminStockRoute,
+  AdminSuppliersRoute: AdminSuppliersRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCustomerIdRoute: AdminCustomerIdRoute,
   AdminSalesmanIdRoute: AdminSalesmanIdRoute,
